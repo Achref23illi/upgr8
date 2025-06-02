@@ -528,7 +528,7 @@ export function SignupScreen() {
                 <p className="text-sm text-gray-600">
                   Vous avez déjà un compte?{" "}
                   <a
-                    href="/login"
+                    href="/"
                     className="text-red-600 font-medium hover:text-red-700 hover:underline"
                   >
                     Se connecter
@@ -562,12 +562,6 @@ export function SignupScreen() {
               }}
               className="relative w-full h-full"
             >
-              {/* Background glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-tl from-red-100/40 via-transparent to-transparent rounded-tl-full blur-2xl" />
-              
-              {/* Semi-transparent background */}
-              <div className="absolute inset-0 bg-gradient-to-tl from-white/60 to-transparent rounded-tl-full" />
-              
               {/* Image container */}
               <div className="absolute bottom-0 right-0 w-[450px] h-[450px]">
                 <InteractiveImageDisplay
@@ -575,7 +569,7 @@ export function SignupScreen() {
                   overlayText={currentOverlayText}
                   altText="Hockey player visualization"
                   className="w-full h-full"
-                  imageClassName="object-contain drop-shadow-2xl"
+                  imageClassName="object-contain"
                   overlayClassName="text-3xl w-20 h-20"
                 />
               </div>
