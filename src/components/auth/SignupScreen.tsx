@@ -211,11 +211,8 @@ export function SignupScreen() {
   // Handle final submission
   const handleSubmit = () => {
     console.log("Signup completed with data:", formData);
-    alert("Inscription terminée! Vous allez être redirigé vers la page de connexion.");
-    // In a real app, this would save the data and then redirect
-    setTimeout(() => {
-      window.location.href = "/login";
-    }, 2000);
+    // Redirect directly to login page after signup completion
+    window.location.href = "/";
   };
 
   // Animation variants
