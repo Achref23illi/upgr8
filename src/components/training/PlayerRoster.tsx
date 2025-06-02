@@ -181,20 +181,19 @@ export function PlayerRoster({ players, onPlayerDragStart, onPlayerDragEnd }: Pl
               {/* Show all players without position grouping when filtered */}
               {selectedPosition !== "all" ? (
                 filteredPlayers.map((player) => (
-                  <motion.div
+                  <div
                     key={player.id}
-                    variants={itemVariants}
                     className={`bg-gray-50 rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 border border-transparent hover:border-gray-300 ${
                       draggedPlayerId === player.id ? 'opacity-50 scale-95' : ''
                     }`}
                     draggable
-                    onDragStart={(e) => handleDragStart(e, player)}
+                    onDragStart={(e: React.DragEvent) => handleDragStart(e, player)}
                     onDragEnd={handleDragEnd}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                   >
-                    <PlayerCard player={player} />
-                  </motion.div>
+                    <motion.div variants={itemVariants} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <PlayerCard player={player} />
+                    </motion.div>
+                  </div>
                 ))
               ) : (
                 Object.entries(playersByPosition).map(([position, positionPlayers]) => 
@@ -213,37 +212,36 @@ export function PlayerRoster({ players, onPlayerDragStart, onPlayerDragEnd }: Pl
                       {/* Players in Position */}
                       <div className="space-y-2">
                         {positionPlayers.map((player) => (
-                          <motion.div
+                          <div
                             key={player.id}
-                            variants={itemVariants}
                             className={`bg-gray-50 rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-gray-100 border border-transparent hover:border-gray-300 ${
                               draggedPlayerId === player.id ? 'opacity-50 scale-95' : ''
                             }`}
                             draggable
-                            onDragStart={(e) => handleDragStart(e, player)}
+                            onDragStart={(e: React.DragEvent) => handleDragStart(e, player)}
                             onDragEnd={handleDragEnd}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
                           >
-                            <PlayerCard player={player} />
-                          </motion.div>
-                        ))}
-                      </div>
+                            <motion.div variants={itemVariants} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <PlayerCard player={player} />
+                            </motion.div>
+                          </div>
+                      ))}
                     </div>
-                  ) : null
-                )
-              )}
+                  </div>
+                ) : null
+              )
+            )}
           </motion.div>
         )}
       </div>
 
-        {/* Instructions */}
+      {/* Instructions */}
         <div className="p-4 border-t border-gray-200 bg-gray-50">
           <div className="text-xs text-gray-600 space-y-1">
             <p>💡 <strong>Astuce:</strong></p>
             <p>• Filtrez par position pour accès rapide</p>
             <p>• Glissez pour positionner librement</p>
-            <p>• Déposez sur les zones vertes pour l'exercice</p>
+            <p>• Déposez sur les zones vertes pour l&apos;exercice</p>
           </div>
         </div>
       </div>
