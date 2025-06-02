@@ -166,8 +166,7 @@ export function EvaluationDetailsModal({
         <div className="relative">
           <Progress 
             value={current * 10} 
-            className="h-2"
-            indicatorClassName={getProgressColor(current)}
+            className={`h-2 ${getProgressColor(current)}`}
           />
           {hasPrevious && (
             <div 
