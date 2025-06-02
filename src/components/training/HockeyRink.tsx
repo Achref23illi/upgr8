@@ -27,7 +27,7 @@ export function HockeyRink({
   draggedPlayer,
   onPlayerDrop,
   onPlayerRemove,
-  onPlayerDragEnd,
+  //onPlayerDragEnd,
   dimensions,
   onDimensionsChange
 }: HockeyRinkProps) {
