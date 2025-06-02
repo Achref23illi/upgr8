@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserCircle, Users, UserPlus, Upload, ChevronRight, ChevronLeft } from "lucide-react";
 import { DynamicInput } from "@/components/ui/dynamic-input";
@@ -467,77 +468,76 @@ export function SignupScreen() {
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-lg">
           <div className="bg-white rounded-2xl shadow-xl p-8">
-              {/* Progress Indicator */}
-              <div className="mb-8">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm font-medium text-gray-600">
-                    Étape {currentStep} sur 3
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {currentStep === 1 && "Informations personnelles"}
-                    {currentStep === 2 && "Création d'équipe"}
-                    {currentStep === 3 && "Ajout de joueurs"}
-                  </p>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <motion.div
-                    className="bg-red-600 h-2 rounded-full"
-                    initial={{ width: "0%" }}
-                    animate={{ width: `${(currentStep / 3) * 100}%` }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </div>
-              </div>
-
-              {/* Step Content */}
-              <AnimatePresence mode="wait">
-                {renderStepContent()}
-              </AnimatePresence>
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between mt-8">
-                {currentStep > 1 ? (
-                  <DynamicButton
-                    label="Retour"
-                    variant="outline"
-                    onClick={prevStep}
-                    icon={ChevronLeft}
-                  />
-                ) : (
-                  <div />
-                )}
-
-                {currentStep < 3 ? (
-                  <DynamicButton
-                    label="Continuer"
-                    onClick={nextStep}
-                    icon={ChevronRight}
-                    iconPosition="right"
-                  />
-                ) : (
-                  <DynamicButton
-                    label="Terminer"
-                    onClick={handleSubmit}
-                    variant="default"
-                  />
-                )}
-              </div>
-
-              {/* Link to login */}
-              <div className="mt-6 text-center border-t pt-6">
-                <p className="text-sm text-gray-600">
-                  Vous avez déjà un compte?{" "}
-                  <a
-                    href="/"
-                    className="text-red-600 font-medium hover:text-red-700 hover:underline"
-                  >
-                    Se connecter
-                  </a>
+            {/* Progress Indicator */}
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-sm font-medium text-gray-600">
+                  Étape {currentStep} sur 3
+                </p>
+                <p className="text-sm text-gray-500">
+                  {currentStep === 1 && "Informations personnelles"}
+                  {currentStep === 2 && "Création d'équipe"}
+                  {currentStep === 3 && "Ajout de joueurs"}
                 </p>
               </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <motion.div
+                  className="bg-red-600 h-2 rounded-full"
+                  initial={{ width: "0%" }}
+                  animate={{ width: `${(currentStep / 3) * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </div>
+
+            {/* Step Content */}
+            <AnimatePresence mode="wait">
+              {renderStepContent()}
+            </AnimatePresence>
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-8">
+              {currentStep > 1 ? (
+                <DynamicButton
+                  label="Retour"
+                  variant="outline"
+                  onClick={prevStep}
+                  icon={ChevronLeft}
+                />
+              ) : (
+                <div />
+              )}
+
+              {currentStep < 3 ? (
+                <DynamicButton
+                  label="Continuer"
+                  onClick={nextStep}
+                  icon={ChevronRight}
+                  iconPosition="right"
+                />
+              ) : (
+                <DynamicButton
+                  label="Terminer"
+                  onClick={handleSubmit}
+                  variant="default"
+                />
+              )}
+            </div>
+
+            <div className="mt-6 text-center border-t pt-6">
+              <p className="text-sm text-gray-600">
+                Vous avez déjà un compte?{" "}
+                <Link
+                  href="/"
+                  className="text-red-600 font-medium hover:text-red-700 hover:underline"
+                >
+                  Se connecter
+                </Link>
+              </p>
             </div>
           </div>
         </div>
+      </div>
 
       {/* Image Display Section - Bottom Right */}
       <AnimatePresence>

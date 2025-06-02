@@ -135,6 +135,11 @@ export default function TrainingsPage() {
 
   // Handle player drag and drop
   const handlePlayerDrop = React.useCallback((playerId: string, x: number, y: number, positionId?: string) => {
+    console.log('Player dropped:', playerId, 'at position:', x, y);
+    
+    // Clear dragged player state immediately
+    setDraggedPlayer(null);
+    
     setCurrentSession(prev => ({
       ...prev,
       playerPositions: {
@@ -457,6 +462,7 @@ export default function TrainingsPage() {
             draggedPlayer={draggedPlayer}
             onPlayerDrop={handlePlayerDrop}
             onPlayerRemove={handleRemovePlayer}
+            onPlayerDragEnd={() => setDraggedPlayer(null)}
             dimensions={rinkDimensions}
             onDimensionsChange={setRinkDimensions}
           />

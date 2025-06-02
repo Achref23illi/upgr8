@@ -19,6 +19,13 @@ export function PlayerRoster({ players, onPlayerDragStart, onPlayerDragEnd }: Pl
   const [draggedPlayer, setDraggedPlayer] = React.useState<TrainingPlayer | null>(null);
   const [floatingPlayerPosition, setFloatingPlayerPosition] = React.useState<{ x: number; y: number } | null>(null);
 
+  const cleanupDragState = React.useCallback(() => {
+    setDraggedPlayerId(null);
+    setDraggedPlayer(null);
+    setFloatingPlayerPosition(null);
+    onPlayerDragEnd();
+  }, [onPlayerDragEnd]);
+
   // Handle drag start with floating player
   const handleDragStart = (e: React.DragEvent, player: TrainingPlayer) => {
     e.dataTransfer.effectAllowed = "move";
@@ -31,12 +38,9 @@ export function PlayerRoster({ players, onPlayerDragStart, onPlayerDragEnd }: Pl
     setFloatingPlayerPosition({ x: rect.left, y: rect.top });
   };
 
-  const handleDragEnd = () => {
-    setDraggedPlayerId(null);
-    setDraggedPlayer(null);
-    setFloatingPlayerPosition(null);
-    onPlayerDragEnd();
-  };
+  const handleDragEnd = React.useCallback(() => {
+    cleanupDragState();
+  }, [cleanupDragState]);
 
   // Update floating player position on mouse move
   React.useEffect(() => {
@@ -49,6 +53,49 @@ export function PlayerRoster({ players, onPlayerDragStart, onPlayerDragEnd }: Pl
     document.addEventListener('mousemove', handleMouseMove);
     return () => document.removeEventListener('mousemove', handleMouseMove);
   }, [draggedPlayer]);
+
+  // Handle global drag end events
+  React.useEffect(() => {
+    if (!draggedPlayer) return;
+
+    const handleGlobalDragEnd = (e: Event) => {
+      // Only cleanup on dragend, not on drop (drop is handled by target)
+      if (e.type === 'dragend') {
+        setTimeout(cleanupDragState, 50); // Small delay to ensure drop events fire first
+      }
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const handleGlobalMouseUp = (e: MouseEvent) => {
+      // Cleanup on mouse up only if we're still dragging after a delay
+      setTimeout(() => {
+        if (draggedPlayer) {
+          cleanupDragState();
+        }
+      }, 200);
+    };
+
+    // Add event listeners - be less aggressive about cleanup
+    document.addEventListener('dragend', handleGlobalDragEnd, true);
+    document.addEventListener('mouseup', handleGlobalMouseUp, true);
+    
+    return () => {
+      document.removeEventListener('dragend', handleGlobalDragEnd, true);
+      document.removeEventListener('mouseup', handleGlobalMouseUp, true);
+    };
+  }, [draggedPlayer, cleanupDragState]);
+
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      if (draggedPlayer || floatingPlayerPosition) {
+        setDraggedPlayerId(null);
+        setDraggedPlayer(null);
+        setFloatingPlayerPosition(null);
+        onPlayerDragEnd();
+      }
+    };
+  }, [draggedPlayer, floatingPlayerPosition, onPlayerDragEnd]);
 
   const getPositionColor = (position: string) => {
     switch (position) {

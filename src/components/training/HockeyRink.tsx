@@ -15,6 +15,7 @@ interface HockeyRinkProps {
   draggedPlayer?: TrainingPlayer | null;
   onPlayerDrop: (playerId: string, x: number, y: number, positionId?: string) => void;
   onPlayerRemove: (playerId: string) => void;
+  onPlayerDragEnd?: () => void;
   dimensions: { width: number; height: number };
   onDimensionsChange: (dimensions: { width: number; height: number }) => void;
 }
@@ -26,6 +27,7 @@ export function HockeyRink({
   draggedPlayer,
   onPlayerDrop,
   onPlayerRemove,
+  onPlayerDragEnd,
   dimensions,
   onDimensionsChange
 }: HockeyRinkProps) {
@@ -37,6 +39,7 @@ export function HockeyRink({
   // Handle drag over rink
   const handleDragOver = React.useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
     if (!rinkRef.current) return;
 
     const rect = rinkRef.current.getBoundingClientRect();
@@ -49,11 +52,15 @@ export function HockeyRink({
   // Handle drop on rink
   const handleDrop = React.useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!draggedPlayer || !rinkRef.current) return;
 
     const rect = rinkRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    // Clear drag over position
+    setDragOverPosition(null);
 
     // Check if dropping on a drill position
     let targetPositionId: string | undefined;
@@ -66,7 +73,7 @@ export function HockeyRink({
           if (distance < 8) { // 8% radius for snapping
             targetPositionId = pos.id;
             onPlayerDrop(draggedPlayer.id, pos.x, pos.y, targetPositionId);
-            setDragOverPosition(null);
+            // Cleanup is handled in the parent component's handlePlayerDrop
             return;
           }
         }
@@ -74,7 +81,7 @@ export function HockeyRink({
     }
 
     onPlayerDrop(draggedPlayer.id, x, y);
-    setDragOverPosition(null);
+    // Cleanup is handled in the parent component's handlePlayerDrop
   }, [draggedPlayer, selectedDrill, onPlayerDrop]);
 
   // Handle drag leave
