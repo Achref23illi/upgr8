@@ -3,15 +3,8 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import { 
-  Users, 
   Plus, 
-  User, 
-  //Star,
-  //Calendar,
-  //MapPin,
-  //Trophy,
-  //Target,
-  Shield,
+  User,
   Clock,
   //TrendingUp,
   Search,
@@ -25,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DynamicInput } from "@/components/ui/dynamic-input";
 import { DynamicSelect } from "@/components/ui/dynamic-select";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AddPlayerModal } from "@/components/players/AddPlayerModal";
 import { PlayerDetailsModal } from "@/components/players/PlayerDetailsModal";
 
@@ -269,7 +261,7 @@ export default function PlayersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Page Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -278,17 +270,18 @@ export default function PlayersPage() {
         className="flex items-center justify-between"
       >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Joueurs</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-2xl font-bold text-gray-900">Joueurs</h1>
+          <p className="text-gray-600 text-sm mt-1">
             Gérez vos joueurs et suivez leurs performances
           </p>
         </div>
         <Button
           onClick={() => setIsAddModalOpen(true)}
           className="bg-red-600 hover:bg-red-700"
+          size="sm"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Ajouter Joueur
+          <Plus className="h-3 w-3 mr-1" />
+          Ajouter
         </Button>
       </motion.div>
 
@@ -297,55 +290,40 @@ export default function PlayersPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-5 gap-4"
+        className="grid grid-cols-2 md:grid-cols-5 gap-2"
       >
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <Users className="h-8 w-8 text-blue-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-2">
+          <div>
+            <p className="text-xs text-gray-500 mb-0.5">Total</p>
+            <p className="text-lg font-bold text-gray-900">{stats.total}</p>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <Activity className="h-8 w-8 text-green-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Actifs</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
-            </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-2">
+          <div>
+            <p className="text-xs text-gray-500 mb-0.5">Actifs</p>
+            <p className="text-lg font-bold text-gray-900">{stats.active}</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <AlertTriangle className="h-8 w-8 text-red-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Blessés</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.injured}</p>
-            </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-2">
+          <div>
+            <p className="text-xs text-gray-500 mb-0.5">Blessés</p>
+            <p className="text-lg font-bold text-gray-900">{stats.injured}</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <Shield className="h-8 w-8 text-purple-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Gardiens</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.goalies}</p>
-            </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-2">
+          <div>
+            <p className="text-xs text-gray-500 mb-0.5">Gardiens</p>
+            <p className="text-lg font-bold text-gray-900">{stats.goalies}</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <User className="h-8 w-8 text-orange-600" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Patineurs</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.skaters}</p>
-            </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-2">
+          <div>
+            <p className="text-xs text-gray-500 mb-0.5">Patineurs</p>
+            <p className="text-lg font-bold text-gray-900">{stats.skaters}</p>
           </div>
         </div>
       </motion.div>
@@ -355,60 +333,60 @@ export default function PlayersPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
-        className="bg-white rounded-lg shadow p-6"
+        className="bg-white rounded-lg border border-gray-200 p-3"
       >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center">
+            <Filter className="h-4 w-4 mr-1" />
             Filtres
           </h3>
           <Button
             variant="outline"
             size="sm"
             onClick={clearFilters}
-            className="text-gray-600"
+            className="text-gray-600 text-xs px-2 py-1"
           >
             Effacer
           </Button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
             <DynamicInput
               type="text"
-              placeholder="Rechercher par nom ou numéro..."
+              placeholder="Rechercher..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-7 text-xs h-8"
             />
           </div>
 
           <DynamicSelect
-            placeholder="Toutes les positions"
+            placeholder="Position"
             value={selectedPosition}
             onValueChange={setSelectedPosition}
             options={positions.map(pos => ({ value: pos, label: pos }))}
           />
 
           <DynamicSelect
-            placeholder="Toutes les équipes"
+            placeholder="Équipe"
             value={selectedTeam}
             onValueChange={setSelectedTeam}
             options={teams.map(team => ({ value: team, label: team }))}
           />
 
           <DynamicSelect
-            placeholder="Tous les statuts"
+            placeholder="Statut"
             value={selectedStatus}
             onValueChange={setSelectedStatus}
             options={statuses}
           />
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-sm text-gray-600">
-            {filteredPlayers.length} joueur{filteredPlayers.length !== 1 ? 's' : ''} trouvé{filteredPlayers.length !== 1 ? 's' : ''}
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-xs text-gray-600">
+            {filteredPlayers.length} résultat{filteredPlayers.length !== 1 ? 's' : ''}
           </span>
         </div>
       </motion.div>
@@ -418,7 +396,7 @@ export default function PlayersPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3"
       >
         {filteredPlayers.map((player) => {
           const StatusIcon = getStatusIcon(player.status);
@@ -428,73 +406,80 @@ export default function PlayersPage() {
               key={player.id}
               variants={itemVariants}
               whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
               onClick={() => handlePlayerClick(player)}
-              className="bg-white rounded-lg shadow hover:shadow-lg transition-all cursor-pointer border border-gray-200"
+              className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer"
             >
               {/* Player Header */}
-              <div className={`${player.teamColor} text-white p-4 rounded-t-lg`}>
+              <div className={`${player.teamColor} text-white p-2 rounded-t-lg`}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-12 w-12 border-2 border-white">
-                      <AvatarFallback className="bg-white/20 text-white font-bold text-lg">
-                        #{player.number}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-bold text-lg leading-tight">{player.name}</h3>
-                      <p className="text-white/80 text-sm">{player.team}</p>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">
+                      #{player.number}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-xs leading-tight truncate">{player.name}</h3>
+                      <p className="text-white/80 text-xs truncate">{player.team}</p>
                     </div>
                   </div>
-                  <Badge className={`${getPositionColor(player.position)} text-xs font-bold`}>
+                  <Badge className={`${getPositionColor(player.position)} text-xs px-1 py-0`}>
                     {player.position}
                   </Badge>
                 </div>
               </div>
 
               {/* Player Stats */}
-              <div className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Âge</span>
-                  <span className="font-semibold">{player.age} ans</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Points</span>
-                  <span className="font-semibold">
-                    {player.position === "G" ? `${player.gamesPlayed} PJ` : `${player.points} pts`}
-                  </span>
+              <div className="p-2 space-y-2">
+                <div className="grid grid-cols-3 gap-1 text-center">
+                  <div className="bg-gray-50 rounded p-1">
+                    <div className="text-xs font-bold text-gray-900">{player.age}</div>
+                    <div className="text-xs text-gray-600">ans</div>
+                  </div>
+                  <div className="bg-gray-50 rounded p-1">
+                    <div className="text-xs font-bold text-gray-900">
+                      {player.position === "G" ? player.gamesPlayed : player.points}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {player.position === "G" ? "PJ" : "pts"}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 rounded p-1">
+                    <div className={`text-xs font-bold ${
+                      player.plusMinus >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {player.plusMinus >= 0 ? '+' : ''}{player.plusMinus}
+                    </div>
+                    <div className="text-xs text-gray-600">+/-</div>
+                  </div>
                 </div>
 
                 {player.position !== "G" && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Buts/Passes</span>
-                    <span className="font-semibold">{player.goals}B {player.assists}A</span>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">B/A</span>
+                      <span className="font-medium text-gray-900">{player.goals}/{player.assists}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">PUN</span>
+                      <span className="font-medium text-gray-900">{player.penaltyMinutes}</span>
+                    </div>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">+/-</span>
-                  <span className={`font-semibold ${
-                    player.plusMinus >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {player.plusMinus >= 0 ? '+' : ''}{player.plusMinus}
-                  </span>
-                </div>
-
-                <div className="pt-2 border-t border-gray-200">
+                <div className="pt-1 border-t border-gray-100">
                   <div className="flex items-center justify-between">
-                    <Badge className={getStatusColor(player.status)}>
-                      <StatusIcon className="h-3 w-3 mr-1" />
-                      {player.status === "active" ? "Actif" : 
-                       player.status === "injured" ? "Blessé" : "Suspendu"}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <StatusIcon className="h-3 w-3" />
+                      <Badge className={`${getStatusColor(player.status)} text-xs px-1 py-0`}>
+                        {player.status === "active" ? "Actif" : 
+                         player.status === "injured" ? "Blessé" : "Suspendu"}
+                      </Badge>
+                    </div>
                     {player.shoots && (
-                      <span className="text-xs text-gray-500">Lance: {player.shoots}</span>
+                      <span className="text-xs text-gray-500">{player.shoots}</span>
                     )}
                   </div>
                   {player.injuryDetails && (
-                    <p className="text-xs text-red-600 mt-1">{player.injuryDetails}</p>
+                    <p className="text-xs text-red-600 mt-1 truncate">{player.injuryDetails}</p>
                   )}
                 </div>
               </div>
@@ -508,20 +493,20 @@ export default function PlayersPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center py-12"
+          className="text-center py-8"
         >
-          <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <User className="h-12 w-12 text-gray-400 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Aucun joueur trouvé
           </h3>
-          <p className="text-gray-600 mb-4">
-            Essayez de modifier vos filtres ou ajoutez un nouveau joueur.
+          <p className="text-gray-600 mb-4 text-sm">
+            Modifiez vos filtres ou ajoutez un nouveau joueur.
           </p>
           <Button
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-red-600 hover:bg-red-700"
+            className="bg-red-600 hover:bg-red-700 text-sm"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-3 w-3 mr-1" />
             Ajouter un Joueur
           </Button>
         </motion.div>
@@ -532,7 +517,6 @@ export default function PlayersPage() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAddPlayer={(player) => {
-          // Handle adding player logic here
           console.log("Adding player:", player);
           setIsAddModalOpen(false);
         }}

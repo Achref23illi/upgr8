@@ -208,7 +208,7 @@ export function AddTeamModal({ isOpen, onClose, onAddTeam }: AddTeamModalProps) 
                   </h2>
                 </div>
                 <Button variant="ghost" size="icon" onClick={handleClose}>
-                  <X className="h-5 w-5" />
+                  <X className="h-8 w-8" />
                 </Button>
               </div>
 

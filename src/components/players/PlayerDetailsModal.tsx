@@ -174,11 +174,8 @@ export function PlayerDetailsModal({ isOpen, onClose, player }: PlayerDetailsMod
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                      <Edit className="h-5 w-5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20">
-                      <X className="h-6 w-6" />
+                    <Button variant="ghost" size="lg" onClick={onClose} className="text-white hover:bg-white/20 h-12 w-12">
+                      <X className="h-7 w-7" />
                     </Button>
                   </div>
                 </div>
@@ -189,15 +186,12 @@ export function PlayerDetailsModal({ isOpen, onClose, player }: PlayerDetailsMod
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-3 border-b border-gray-200 bg-white rounded-none h-12">
                     <TabsTrigger value="overview" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
-                      <User className="h-4 w-4 mr-2" />
                       Aperçu
                     </TabsTrigger>
                     <TabsTrigger value="stats" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
-                      <BarChart3 className="h-4 w-4 mr-2" />
                       Statistiques
                     </TabsTrigger>
                     <TabsTrigger value="games" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
-                      <Calendar className="h-4 w-4 mr-2" />
                       Matchs
                     </TabsTrigger>
                   </TabsList>
@@ -240,21 +234,21 @@ export function PlayerDetailsModal({ isOpen, onClose, player }: PlayerDetailsMod
                           <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact</h3>
                           <div className="space-y-3">
                             {player.phone && (
-                              <div className="flex items-center space-x-3">
-                                <Phone className="h-4 w-4 text-gray-400" />
-                                <span className="text-gray-900">{player.phone}</span>
+                              <div>
+                                <span className="text-sm text-gray-600">Téléphone:</span>
+                                <div className="text-gray-900">{player.phone}</div>
                               </div>
                             )}
                             {player.email && (
-                              <div className="flex items-center space-x-3">
-                                <Mail className="h-4 w-4 text-gray-400" />
-                                <span className="text-gray-900">{player.email}</span>
+                              <div>
+                                <span className="text-sm text-gray-600">Email:</span>
+                                <div className="text-gray-900">{player.email}</div>
                               </div>
                             )}
                             {player.parent && (
-                              <div className="flex items-center space-x-3">
-                                <User className="h-4 w-4 text-gray-400" />
-                                <span className="text-gray-900">{player.parent}</span>
+                              <div>
+                                <span className="text-sm text-gray-600">Parent/Tuteur:</span>
+                                <div className="text-gray-900">{player.parent}</div>
                               </div>
                             )}
                           </div>
@@ -267,7 +261,6 @@ export function PlayerDetailsModal({ isOpen, onClose, player }: PlayerDetailsMod
                           <h3 className="text-lg font-semibold text-gray-900 mb-4">Statut Actuel</h3>
                           <div className="flex items-center space-x-3 mb-4">
                             <Badge className={getStatusColor(player.status)}>
-                              <StatusIcon className="h-4 w-4 mr-2" />
                               {player.status === "active" ? "Actif" : 
                                player.status === "injured" ? "Blessé" : "Suspendu"}
                             </Badge>

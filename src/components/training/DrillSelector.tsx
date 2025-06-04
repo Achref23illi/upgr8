@@ -20,6 +20,7 @@ import { DynamicInput } from "@/components/ui/dynamic-input";
 import { DynamicSelect } from "@/components/ui/dynamic-select";
 import type { TrainingDrill } from "@/app/dashboard/trainings/page";
 
+
 interface DrillSelectorProps {
   isOpen: boolean;
   onClose: () => void;
@@ -330,7 +331,7 @@ export function DrillSelector({ isOpen, onClose, onSelectDrill, currentDrill }: 
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center space-x-3">
                             <div className={`p-2 rounded-lg ${drill.color}`}>
-                              <IconComponent className="w-5 h-5" />
+                              {IconComponent && <IconComponent className="w-5 h-5" />}
                             </div>
                             <div>
                               <h4 className="font-semibold text-gray-900">{drill.name}</h4>

@@ -200,8 +200,8 @@ export function AddPlayerModal({ isOpen, onClose, onAddPlayer, teams }: AddPlaye
                     Ajouter un Nouveau Joueur
                   </h2>
                 </div>
-                <Button variant="ghost" size="icon" onClick={handleClose}>
-                  <X className="h-5 w-5" />
+                <Button variant="ghost" size="lg" onClick={handleClose} className="h-12 w-12">
+                  <X className="h-6 w-6" />
                 </Button>
               </div>
 

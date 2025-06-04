@@ -4,49 +4,39 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { 
   Play, 
-  //Pause, 
-  //Square, 
-  //Plus, 
-  //Settings, 
-  //Users, 
-  //Clock, 
+  Square,
   Target, 
-  //Zap,
-  //Shield,
-  RotateCcw,
-  //Save,
-  //Download,
-  //Upload
+  ChevronRight,
+  FileText,
+  BarChart3,
+  CheckCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-//import { Badge } from "@/components/ui/badge";
-//import { DynamicSelect } from "@/components/ui/dynamic-select";
-import { HockeyRink } from "@/components/training/HockeyRink";
-import { PlayerRoster } from "@/components/training/PlayerRoster";
-import { DrillSelector } from "@/components/training/DrillSelector";
-import { TrainingControls } from "@/components/training/TrainingControls";
-import { TrainingTimer } from "@/components/training/TrainingTimer";
+import { Badge } from "@/components/ui/badge";
 
 // Training drill types
 export interface TrainingDrill {
   id: string;
   name: string;
-  type: "skating" | "shooting" | "passing" | "defensive" | "powerplay" | "penalty_kill" | "scrimmage";
-  duration: number; // in minutes
+  type: "skating" | "shooting" | "passing" | "defensive" | "powerplay" | "scrimmage";
+  duration: number;
   description: string;
   minPlayers: number;
   maxPlayers: number;
-  positions: {
-    id: string;
-    x: number; // percentage from left
-    y: number; // percentage from top
-    type: "player" | "cone" | "puck" | "goal";
-    position?: string; // G, D, C, LW, RW
-    required: boolean;
-  }[];
   instructions: string[];
-  icon: React.ElementType;
-  color: string;
+  positions?: DrillPosition[];
+  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  color?: string;
+}
+
+// Position interface pour les exercices
+export interface DrillPosition {
+  id: string;
+  x: number;
+  y: number;
+  type: "player" | "cone" | "puck" | "goal";
+  position?: string;
+  required: boolean;
 }
 
 // Player interface for training
@@ -55,129 +45,142 @@ export interface TrainingPlayer {
   name: string;
   number: number;
   position: string;
-  team: string;
-  teamColor: string;
-  energy: number; // 0-100
-  currentX?: number;
-  currentY?: number;
-  assigned: boolean;
+  present: boolean;
 }
 
 // Training session state
 export interface TrainingSession {
   id: string;
   name: string;
-  team: string;
   date: Date;
   duration: number;
   currentDrill?: TrainingDrill;
-  playerPositions: Record<string, { x: number; y: number; positionId?: string }>;
-  drillQueue: TrainingDrill[];
   isRunning: boolean;
   elapsedTime: number;
+  completedDrills: string[];
+  notes: string;
 }
 
-/**
- * Advanced Training Page
- * 
- * Features an interactive hockey rink where coaches can drag players
- * to different positions and set up various training drills.
- */
+// Historique des exercices
+interface DrillHistory {
+  id: string;
+  drillName: string;
+  completedAt: Date;
+  duration: number;
+  participantCount: number;
+}
+
+// Mock drills data
+const mockDrills: TrainingDrill[] = [
+  {
+    id: "drill-1",
+    name: "Échauffement général",
+    type: "skating",
+    duration: 10,
+    description: "Tour de patinoire avec étirements",
+    minPlayers: 6,
+    maxPlayers: 20,
+    instructions: ["Patinage léger", "Étirements dynamiques", "Passes simples"]
+  },
+  {
+    id: "drill-2", 
+    name: "Tir au but",
+    type: "shooting",
+    duration: 15,
+    description: "Exercice de précision au tir",
+    minPlayers: 8,
+    maxPlayers: 16,
+    instructions: ["Positionnement", "Technique de tir", "Suivi de la rondelle"]
+  },
+  {
+    id: "drill-3",
+    name: "Jeu de puissance",
+    type: "powerplay", 
+    duration: 20,
+    description: "Formation 5v4 offensive",
+    minPlayers: 9,
+    maxPlayers: 12,
+    instructions: ["Formation umbrella", "Circulation rapide", "Recherche d'ouvertures"]
+  },
+  {
+    id: "drill-4",
+    name: "Passes croisées",
+    type: "passing",
+    duration: 12,
+    description: "Exercice de passes en mouvement",
+    minPlayers: 6,
+    maxPlayers: 14,
+    instructions: ["Formation en triangle", "Passes précises", "Déplacement constant"]
+  },
+  {
+    id: "drill-5",
+    name: "Défense en zone",
+    type: "defensive",
+    duration: 18,
+    description: "Positionnement défensif",
+    minPlayers: 8,
+    maxPlayers: 12,
+    instructions: ["Couverture de zone", "Communication", "Transitions rapides"]
+  },
+  {
+    id: "drill-6",
+    name: "Match 3v3",
+    type: "scrimmage",
+    duration: 25,
+    description: "Petit match d'application",
+    minPlayers: 6,
+    maxPlayers: 12,
+    instructions: ["Jeu libre", "Application des techniques", "Fair-play"]
+  }
+];
+
 export default function TrainingsPage() {
-  // Session state
   const [currentSession, setCurrentSession] = React.useState<TrainingSession>({
     id: "session-1",
-    name: "Entraînement Titans U15 AAA",
-    team: "Titans U15 AAA",
+    name: "Entraînement U15 AAA",
     date: new Date(),
-    duration: 90, // 90 minutes
-    playerPositions: {},
-    drillQueue: [],
+    duration: 90,
     isRunning: false,
-    elapsedTime: 0
+    elapsedTime: 0,
+    completedDrills: [],
+    notes: ""
   });
 
-  // UI state
+  const [availablePlayers] = React.useState<TrainingPlayer[]>([
+    { id: "p1", name: "Emma Gagnon", number: 31, position: "G", present: true },
+    { id: "p2", name: "Marc Tremblay", number: 24, position: "LW", present: true },
+    { id: "p3", name: "Sophie Lavoie", number: 7, position: "D", present: true },
+    { id: "p4", name: "Thomas Roy", number: 15, position: "RW", present: false },
+    { id: "p5", name: "Gabriel Morin", number: 12, position: "C", present: true },
+    { id: "p6", name: "Maya Boucher", number: 19, position: "LW", present: true },
+    { id: "p7", name: "Nathan Côté", number: 5, position: "D", present: true },
+    { id: "p8", name: "Camille Gagnon", number: 22, position: "RW", present: true },
+    { id: "p9", name: "Simon Pelletier", number: 3, position: "D", present: false },
+    { id: "p10", name: "Jade Fortin", number: 17, position: "C", present: true }
+  ]);
+
   const [selectedDrill, setSelectedDrill] = React.useState<TrainingDrill | null>(null);
-  const [availablePlayers, setAvailablePlayers] = React.useState<TrainingPlayer[]>([]);
-  const [draggedPlayer, setDraggedPlayer] = React.useState<TrainingPlayer | null>(null);
-  const [showDrillSelector, setShowDrillSelector] = React.useState(false);
-  const [rinkDimensions, setRinkDimensions] = React.useState({ width: 800, height: 400 });
-  const [isDemoMode, setIsDemoMode] = React.useState(false);
-  const [demoStep, setDemoStep] = React.useState(0);
+  const [drillHistory, setDrillHistory] = React.useState<DrillHistory[]>([]);
+  const [showNotes, setShowNotes] = React.useState(false);
 
-  // Load available players (mock data)
+  // Timer en temps réel
   React.useEffect(() => {
-    const mockPlayers: TrainingPlayer[] = [
-      { id: "p1", name: "Alex Bouchard", number: 91, position: "C", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 100, assigned: false },
-      { id: "p2", name: "Emma Gagnon", number: 31, position: "G", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 95, assigned: false },
-      { id: "p3", name: "Marc Tremblay", number: 24, position: "LW", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 90, assigned: false },
-      { id: "p4", name: "Sophie Lavoie", number: 7, position: "D", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 85, assigned: false },
-      { id: "p5", name: "Thomas Roy", number: 15, position: "RW", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 100, assigned: false },
-      { id: "p6", name: "Léa Dubois", number: 8, position: "D", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 80, assigned: false },
-      { id: "p7", name: "Gabriel Morin", number: 12, position: "C", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 95, assigned: false },
-      { id: "p8", name: "Maya Boucher", number: 19, position: "LW", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 90, assigned: false },
-      { id: "p9", name: "Nathan Côté", number: 5, position: "D", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 100, assigned: false },
-      { id: "p10", name: "Camille Gagnon", number: 22, position: "RW", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 85, assigned: false },
-      { id: "p11", name: "Simon Pelletier", number: 3, position: "D", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 90, assigned: false },
-      { id: "p12", name: "Jade Fortin", number: 17, position: "C", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 95, assigned: false },
-      { id: "p13", name: "Lucas Bergeron", number: 9, position: "LW", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 100, assigned: false },
-      { id: "p14", name: "Océane Girard", number: 11, position: "RW", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 80, assigned: false },
-      { id: "p15", name: "Benjamin Leblanc", number: 4, position: "D", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 90, assigned: false },
-      { id: "p16", name: "Clara Simard", number: 18, position: "LW", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 85, assigned: false },
-      { id: "p17", name: "Raphaël Caron", number: 6, position: "D", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 95, assigned: false },
-      { id: "p18", name: "Amélie Poirier", number: 13, position: "RW", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 100, assigned: false },
-      { id: "p19", name: "Antoine Dufour", number: 16, position: "C", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 90, assigned: false },
-      { id: "p20", name: "Zoé Thibault", number: 20, position: "G", team: "Titans U15 AAA", teamColor: "bg-red-800", energy: 95, assigned: false },
-    ];
-    setAvailablePlayers(mockPlayers);
-  }, []);
+    let interval: NodeJS.Timeout;
+    if (currentSession.isRunning) {
+      interval = setInterval(() => {
+        setCurrentSession(prev => ({
+          ...prev,
+          elapsedTime: prev.elapsedTime + 1
+        }));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [currentSession.isRunning]);
 
-  // Handle player drag and drop
-  const handlePlayerDrop = React.useCallback((playerId: string, x: number, y: number, positionId?: string) => {
-    console.log('Player dropped:', playerId, 'at position:', x, y);
-    
-    // Clear dragged player state immediately
-    setDraggedPlayer(null);
-    
-    setCurrentSession(prev => ({
-      ...prev,
-      playerPositions: {
-        ...prev.playerPositions,
-        [playerId]: { x, y, positionId }
-      }
-    }));
+  const presentPlayers = availablePlayers.filter(p => p.present);
+  const absentPlayers = availablePlayers.filter(p => !p.present);
 
-    // Update player assignment status
-    setAvailablePlayers(prev =>
-      prev.map(player =>
-        player.id === playerId
-          ? { ...player, assigned: true, currentX: x, currentY: y }
-          : player
-      )
-    );
-  }, []);
-
-  // Remove player from rink
-  const handleRemovePlayer = React.useCallback((playerId: string) => {
-    setCurrentSession(prev => ({
-      ...prev,
-      playerPositions: Object.fromEntries(
-        Object.entries(prev.playerPositions).filter(([id]) => id !== playerId)
-      )
-    }));
-
-    setAvailablePlayers(prev =>
-      prev.map(player =>
-        player.id === playerId
-          ? { ...player, assigned: false, currentX: undefined, currentY: undefined }
-          : player
-      )
-    );
-  }, []);
-
-  // Start drill
-  const handleStartDrill = React.useCallback((drill: TrainingDrill) => {
+  const handleStartDrill = (drill: TrainingDrill) => {
     setCurrentSession(prev => ({
       ...prev,
       currentDrill: drill,
@@ -185,300 +188,312 @@ export default function TrainingsPage() {
       elapsedTime: 0
     }));
     setSelectedDrill(drill);
-  }, []);
+  };
 
-  // Stop training
-  const handleStopTraining = React.useCallback(() => {
+  const handleStopTraining = () => {
+    if (currentSession.currentDrill) {
+      // Ajouter à l'historique
+      const newHistory: DrillHistory = {
+        id: Date.now().toString(),
+        drillName: currentSession.currentDrill.name,
+        completedAt: new Date(),
+        duration: currentSession.elapsedTime,
+        participantCount: presentPlayers.length
+      };
+      setDrillHistory(prev => [...prev, newHistory]);
+      
+      // Marquer comme complété
+      setCurrentSession(prev => ({
+        ...prev,
+        completedDrills: [...prev.completedDrills, currentSession.currentDrill!.id]
+      }));
+    }
+
     setCurrentSession(prev => ({
       ...prev,
       isRunning: false,
       currentDrill: undefined
     }));
     setSelectedDrill(null);
-  }, []);
+  };
 
-  // Clear all players from rink
-  const handleClearRink = React.useCallback(() => {
-    setCurrentSession(prev => ({
-      ...prev,
-      playerPositions: {}
-    }));
-    setAvailablePlayers(prev =>
-      prev.map(player => ({
-        ...player,
-        assigned: false,
-        currentX: undefined,
-        currentY: undefined
-      }))
-    );
-  }, []);
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
-  // Auto-position players for drill
-  const handleAutoPosition = React.useCallback(() => {
-    if (!selectedDrill) return;
+  const getTypeColor = (type: TrainingDrill['type']) => {
+    switch (type) {
+      case 'skating': return 'bg-blue-100 text-blue-800';
+      case 'shooting': return 'bg-red-100 text-red-800';
+      case 'passing': return 'bg-green-100 text-green-800';
+      case 'defensive': return 'bg-orange-100 text-orange-800';
+      case 'powerplay': return 'bg-purple-100 text-purple-800';
+      case 'scrimmage': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-    const availableUnassigned = availablePlayers.filter(p => !p.assigned);
-    const newPositions: Record<string, { x: number; y: number; positionId?: string }> = {};
-    
-    selectedDrill.positions.forEach((pos, index) => {
-      if (pos.type === "player" && availableUnassigned[index]) {
-        const player = availableUnassigned[index];
-        newPositions[player.id] = {
-          x: pos.x,
-          y: pos.y,
-          positionId: pos.id
-        };
-      }
-    });
-
-    setCurrentSession(prev => ({
-      ...prev,
-      playerPositions: { ...prev.playerPositions, ...newPositions }
-    }));
-
-    // Update player assignments
-    Object.keys(newPositions).forEach(playerId => {
-      setAvailablePlayers(prev =>
-        prev.map(player =>
-          player.id === playerId
-            ? { 
-                ...player, 
-                assigned: true, 
-                currentX: newPositions[playerId].x,
-                currentY: newPositions[playerId].y
-              }
-            : player
-        )
-      );
-    });
-  }, [selectedDrill, availablePlayers]);
-
-  // Demo mode functionality
-  const startDemo = React.useCallback(() => {
-    setIsDemoMode(true);
-    setDemoStep(0);
-    
-    // Select a drill for demo
-    const demoDrill: TrainingDrill = {
-      id: "demo-skating",
-      name: "Démonstration - Exercice de Patinage",
-      type: "skating",
-      duration: 5,
-      description: "Démonstration automatique d'un exercice de patinage",
-      minPlayers: 6,
-      maxPlayers: 8,
-      positions: [
-        { id: "demo-1", x: 20, y: 30, type: "player", position: "C", required: true },
-        { id: "demo-2", x: 20, y: 50, type: "player", position: "LW", required: true },
-        { id: "demo-3", x: 20, y: 70, type: "player", position: "RW", required: true },
-        { id: "demo-4", x: 50, y: 40, type: "cone", required: true },
-        { id: "demo-5", x: 50, y: 60, type: "cone", required: true },
-        { id: "demo-6", x: 80, y: 50, type: "cone", required: true },
-      ],
-      instructions: [
-        "Les joueurs partent de la ligne de but",
-        "Contourner les cônes en slalom",
-        "Terminer avec un tir au but"
-      ],
-      icon: RotateCcw,
-      color: "bg-blue-100 text-blue-800"
-    };
-    
-    setSelectedDrill(demoDrill);
-    
-    // Clear rink first
-    handleClearRink();
-    
-    // Auto-position players with delay
-    setTimeout(() => {
-      const demoPlayers = availablePlayers.slice(0, 6);
-      const newPositions: Record<string, { x: number; y: number; positionId?: string }> = {};
-      
-      demoDrill.positions.forEach((pos, index) => {
-        if (pos.type === "player" && demoPlayers[index]) {
-          newPositions[demoPlayers[index].id] = {
-            x: pos.x,
-            y: pos.y,
-            positionId: pos.id
-          };
-        }
-      });
-      
-      setCurrentSession(prev => ({
-        ...prev,
-        playerPositions: newPositions,
-        currentDrill: demoDrill
-      }));
-      
-      // Update player assignments
-      setAvailablePlayers(prev =>
-        prev.map((player, index) =>
-          index < 6
-            ? { ...player, assigned: true, currentX: demoDrill.positions[index].x, currentY: demoDrill.positions[index].y }
-            : player
-        )
-      );
-      
-      // Start the drill after positioning
-      setTimeout(() => {
-        setCurrentSession(prev => ({
-          ...prev,
-          isRunning: true,
-          elapsedTime: 0
-        }));
-        setDemoStep(1);
-      }, 1500);
-    }, 500);
-  }, [availablePlayers, handleClearRink]);
-
-  // Animate players during demo
-  React.useEffect(() => {
-    if (!isDemoMode || !currentSession.isRunning || demoStep === 0) return;
-
-    const animationInterval = setInterval(() => {
-      setCurrentSession(prev => ({
-        ...prev,
-        playerPositions: Object.fromEntries(
-          Object.entries(prev.playerPositions).map(([playerId, pos]) => {
-            const player = availablePlayers.find(p => p.id === playerId);
-            if (!player) return [playerId, pos];
-
-            // Move players along a path
-            let newX = pos.x;
-            let newY = pos.y;
-
-            if (demoStep === 1) {
-              // Move towards first cone
-              newX = Math.min(pos.x + 2, 50);
-            } else if (demoStep === 2) {
-              // Move around cones
-              newX = Math.min(pos.x + 1.5, 80);
-              newY = pos.y + Math.sin((newX - 50) * 0.2) * 5;
-            } else if (demoStep === 3) {
-              // Move towards goal
-              newX = Math.min(pos.x + 2, 90);
-              newY = pos.y + (50 - pos.y) * 0.05;
-            }
-
-            return [playerId, { ...pos, x: newX, y: newY }];
-          })
-        )
-      }));
-
-      // Update demo step
-      setDemoStep(prev => {
-        if (prev === 1 && currentSession.playerPositions[Object.keys(currentSession.playerPositions)[0]]?.x >= 48) {
-          return 2;
-        } else if (prev === 2 && currentSession.playerPositions[Object.keys(currentSession.playerPositions)[0]]?.x >= 78) {
-          return 3;
-        } else if (prev === 3 && currentSession.playerPositions[Object.keys(currentSession.playerPositions)[0]]?.x >= 88) {
-          // End demo
-          setIsDemoMode(false);
-          handleStopTraining();
-          return 0;
-        }
-        return prev;
-      });
-    }, 100);
-
-    return () => clearInterval(animationInterval);
-  }, [isDemoMode, demoStep, currentSession.isRunning, currentSession.playerPositions, availablePlayers, handleStopTraining]);
-
-  const assignedPlayers = availablePlayers.filter(p => p.assigned);
-  const unassignedPlayers = availablePlayers.filter(p => !p.assigned);
+  const sessionStats = {
+    totalTime: Math.floor(drillHistory.reduce((acc, drill) => acc + drill.duration, 0) / 60),
+    completedDrills: drillHistory.length,
+    averageParticipation: drillHistory.length > 0 
+      ? Math.round(drillHistory.reduce((acc, drill) => acc + drill.participantCount, 0) / drillHistory.length)
+      : 0
+  };
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="flex items-center justify-between"
-      >
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Entraînements</h1>
-          <p className="text-gray-600 mt-1">
-            {currentSession.name} • {assignedPlayers.length} joueurs sur la glace
-          </p>
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Header compact avec statistiques */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">{currentSession.name}</h1>
+            <p className="text-sm text-gray-500">{new Date().toLocaleDateString('fr-CA', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</p>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <div className="text-center">
+              <div className="text-xl font-bold text-gray-900">{formatTime(currentSession.elapsedTime)}</div>
+              <div className="text-sm text-gray-500">Temps actuel</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-xl font-bold text-gray-900">{sessionStats.completedDrills}</div>
+              <div className="text-sm text-gray-500">Exercices</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-xl font-bold text-gray-900">{presentPlayers.length}</div>
+              <div className="text-sm text-gray-500">Présents</div>
+            </div>
+            
+            <Badge variant={currentSession.isRunning ? "default" : "secondary"} className="text-sm px-3 py-1">
+              {currentSession.isRunning ? "En cours" : "Arrêté"}
+            </Badge>
+          </div>
         </div>
         
-        <div className="flex items-center space-x-3">
-          <TrainingTimer
-            isRunning={currentSession.isRunning}
-            elapsedTime={currentSession.elapsedTime}
-            totalDuration={selectedDrill?.duration || 0}
-          />
-          
-          <Button
-            variant="outline"
-            onClick={() => setShowDrillSelector(true)}
-            className="flex items-center space-x-2"
-          >
-            <Target className="h-4 w-4" />
-            <span>Exercices</span>
-          </Button>
+        {currentSession.currentDrill && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-center">
+            <span className="text-base font-medium text-red-800">
+              Exercice actuel: {currentSession.currentDrill.name}
+            </span>
+          </div>
+        )}
+      </div>
 
-          <Button
-            onClick={startDemo}
-            disabled={isDemoMode || currentSession.isRunning}
-            className="bg-purple-600 hover:bg-purple-700 text-white flex items-center space-x-2"
-          >
-            <Play className="h-4 w-4" />
-            <span>Démo</span>
-          </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        {/* Exercices disponibles - plus large */}
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-lg">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <h3 className="text-base font-medium text-gray-900">Exercices disponibles</h3>
+          </div>
+          <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
+            {mockDrills.map((drill) => (
+              <motion.div
+                key={drill.id}
+                onClick={() => setSelectedDrill(drill)}
+                className={`p-3 rounded border cursor-pointer transition-colors ${
+                  selectedDrill?.id === drill.id 
+                    ? 'border-red-200 bg-red-50' 
+                    : currentSession.completedDrills.includes(drill.id)
+                    ? 'border-green-200 bg-green-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="text-base font-medium text-gray-900 truncate">{drill.name}</h4>
+                      {currentSession.completedDrills.includes(drill.id) && (
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <Badge className={`${getTypeColor(drill.type)} text-sm py-1`}>
+                        {drill.type}
+                      </Badge>
+                      <span className="text-sm text-gray-500">{drill.duration} min</span>
+                      <span className="text-sm text-gray-500">{drill.minPlayers}-{drill.maxPlayers} joueurs</span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </motion.div>
 
-      {/* Training Controls */}
-      <TrainingControls
-        session={currentSession}
-        selectedDrill={selectedDrill}
-        onStartDrill={handleStartDrill}
-        onStopTraining={handleStopTraining}
-        onClearRink={handleClearRink}
-        onAutoPosition={handleAutoPosition}
-        assignedPlayersCount={assignedPlayers.length}
-        isDemoMode={isDemoMode}
-      />
+        {/* Détails exercice actuel */}
+        <div className="bg-white border border-gray-200 rounded-lg">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <h3 className="text-base font-medium text-gray-900">Détails</h3>
+          </div>
+          <div className="p-4">
+            {selectedDrill ? (
+              <div className="space-y-3">
+                <div>
+                  <h4 className="text-base font-medium text-gray-900">{selectedDrill.name}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{selectedDrill.description}</p>
+                </div>
 
-      {/* Main Training Area */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-7 gap-4 min-h-0">
-        {/* Player Roster */}
-        <div className="lg:col-span-2">
-          <PlayerRoster
-            players={unassignedPlayers}
-            onPlayerDragStart={setDraggedPlayer}
-            onPlayerDragEnd={() => setDraggedPlayer(null)}
-          />
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">Instructions:</h5>
+                  <ul className="space-y-1">
+                    {selectedDrill.instructions.map((instruction, index) => (
+                      <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                        <span className="text-gray-400 mt-1">•</span>
+                        {instruction}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="flex gap-2 pt-3">
+                  {currentSession.isRunning ? (
+                    <Button 
+                      onClick={handleStopTraining}
+                      size="sm" 
+                      variant="outline"
+                      className="h-8 text-sm flex-1"
+                    >
+                      <Square className="w-4 h-4 mr-2" />
+                      Arrêter
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={() => handleStartDrill(selectedDrill)}
+                      size="sm"
+                      className="h-8 text-sm bg-red-600 hover:bg-red-700 flex-1"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Démarrer
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <Target className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">Sélectionnez un exercice</p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Hockey Rink */}
-        <div className="lg:col-span-5">
-          <HockeyRink
-            session={currentSession}
-            selectedDrill={selectedDrill}
-            players={availablePlayers}
-            draggedPlayer={draggedPlayer}
-            onPlayerDrop={handlePlayerDrop}
-            onPlayerRemove={handleRemovePlayer}
-            onPlayerDragEnd={() => setDraggedPlayer(null)}
-            dimensions={rinkDimensions}
-            onDimensionsChange={setRinkDimensions}
-          />
+        {/* Joueurs présents */}
+        <div className="bg-white border border-gray-200 rounded-lg">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-medium text-gray-900">Présents</h3>
+              <Badge variant="outline" className="text-sm">{presentPlayers.length}</Badge>
+            </div>
+          </div>
+          <div className="p-3 space-y-1 max-h-80 overflow-y-auto">
+            {presentPlayers.map((player) => (
+              <div key={player.id} className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium">
+                    {player.number}
+                  </div>
+                  <span className="text-sm text-gray-900">{player.name}</span>
+                </div>
+                <Badge variant="outline" className="text-sm px-2 py-1">{player.position}</Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Historique et notes */}
+        <div className="bg-white border border-gray-200 rounded-lg">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-medium text-gray-900">Historique</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowNotes(!showNotes)}
+                className="h-7 text-sm px-3"
+              >
+                <FileText className="w-4 h-4 mr-1" />
+                {showNotes ? 'Historique' : 'Notes'}
+              </Button>
+            </div>
+          </div>
+          <div className="p-3">
+            {showNotes ? (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-700">Notes:</label>
+                <textarea
+                  value={currentSession.notes}
+                  onChange={(e) => setCurrentSession(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Observations, points à améliorer..."
+                  className="w-full h-28 text-sm p-3 border border-gray-200 rounded resize-none focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-transparent"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {drillHistory.length > 0 ? (
+                  drillHistory.map((drill) => (
+                    <div key={drill.id} className="p-3 bg-gray-50 rounded">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-sm text-gray-900">{drill.drillName}</div>
+                          <div className="text-sm text-gray-500">
+                            {drill.completedAt.toLocaleTimeString('fr-CA', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })} • {Math.floor(drill.duration / 60)} min
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-600">{drill.participantCount}j</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6">
+                    <BarChart3 className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">Aucun exercice</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Drill Selector Modal */}
-      <DrillSelector
-        isOpen={showDrillSelector}
-        onClose={() => setShowDrillSelector(false)}
-        onSelectDrill={(drill) => {
-          setSelectedDrill(drill);
-          setShowDrillSelector(false);
-        }}
-        currentDrill={selectedDrill}
-      />
+      {/* Joueurs absents - compact */}
+      {absentPlayers.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-medium text-gray-900">Joueurs absents</h3>
+              <Badge variant="outline" className="text-sm text-red-600">{absentPlayers.length}</Badge>
+            </div>
+          </div>
+          <div className="p-3">
+            <div className="flex flex-wrap gap-2">
+              {absentPlayers.map((player) => (
+                <div key={player.id} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded text-sm">
+                  <div className="w-5 h-5 bg-gray-300 rounded-full flex items-center justify-center text-sm font-medium text-gray-600">
+                    {player.number}
+                  </div>
+                  <span className="text-gray-700">{player.name.split(' ')[0]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

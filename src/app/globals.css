@@ -3,6 +3,79 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Global compact styles */
+@layer base {
+  /* Reduce default spacing for all elements */
+  html {
+    font-size: 14px; /* Reduced from default 16px */
+  }
+  
+  /* Compact typography */
+  h1 { @apply text-2xl; } /* Was 3xl */
+  h2 { @apply text-xl; } /* Was 2xl */
+  h3 { @apply text-lg; } /* Was xl */
+  h4 { @apply text-base; } /* Was lg */
+  h5 { @apply text-sm; }
+  h6 { @apply text-xs; }
+  
+  /* Compact spacing for common elements */
+  p { @apply leading-snug; }
+  
+  /* Compact form elements */
+  input, select, textarea {
+    @apply text-sm py-1.5 px-2.5;
+  }
+  
+  /* Compact buttons */
+  button {
+    @apply text-sm py-1.5 px-3;
+  }
+  
+  /* Compact cards and containers */
+  .card, .panel {
+    @apply p-3;
+  }
+  
+  /* Reduce default margins */
+  * {
+    @apply m-0;
+  }
+  
+  /* Compact table spacing */
+  table {
+    @apply text-xs;
+  }
+  th, td {
+    @apply py-1 px-1.5;
+  }
+  
+  /* Compact list items */
+  li {
+    @apply py-0.5;
+  }
+  
+  /* Compact dropdown menus */
+  [role="menu"], [role="listbox"] {
+    @apply text-xs;
+  }
+  
+  /* Compact modals and dialogs */
+  [role="dialog"] {
+    @apply p-3;
+  }
+  
+  /* Reduce icon sizes globally */
+  svg {
+    @apply w-4 h-4;
+  }
+  
+  /* Compact spacing utilities */
+  .space-y-1 > * + * { margin-top: 0.25rem; }
+  .space-y-2 > * + * { margin-top: 0.5rem; }
+  .space-x-1 > * + * { margin-left: 0.25rem; }
+  .space-x-2 > * + * { margin-left: 0.5rem; }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -51,10 +124,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.577 0.245 27.325);
-  --primary-foreground: oklch(1 0 0);
-  --primary-dark: oklch(0.465 0.213 27.218);
-  --primary-light: oklch(0.689 0.221 28.602);
+  --primary: 220 14% 44%;
+  --primary-foreground: 0 0% 100%;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -87,10 +158,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.689 0.221 28.602);
-  --primary-foreground: oklch(0.145 0 0);
-  --primary-dark: oklch(0.577 0.245 27.325);
-  --primary-light: oklch(0.801 0.188 29.234);
+  --primary: 220 18% 58%;
+  --primary-foreground: 0 0% 9%;
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);

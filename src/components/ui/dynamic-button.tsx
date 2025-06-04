@@ -98,43 +98,12 @@ const DynamicButton = React.forwardRef<HTMLButtonElement, DynamicButtonProps>(
     // Spacing between icon and label
     const iconSpacing = size === "icon" ? "" : iconPosition === "left" ? "mr-2" : "ml-2";
 
-    // Animation variants
+    // Simple animation variants - no scale or movement effects
     const buttonVariants = {
       rest: { scale: 1 },
-      hover: { scale: variant === "link" ? 1 : 1.05 },
-      tap: { scale: 0.95 }
+      hover: { scale: 1 },
+      tap: { scale: 0.98 }
     };
-
-    const iconVariants = {
-      rest: { rotate: 0, scale: 1 },
-      hover: { 
-        rotate: iconPosition === "left" ? -15 : 15,
-        scale: 1.2,
-        transition: { type: "spring", stiffness: 300 }
-      }
-    };
-
-    const textVariants = {
-      rest: { y: 0 },
-      hover: { 
-        y: variant === "link" ? 0 : -2,
-        transition: { type: "spring", stiffness: 300 }
-      }
-    };
-
-    // Shimmer effect for default and destructive variants
-    const shimmerVariants = {
-      rest: { x: "-100%" },
-      hover: { 
-        x: "100%",
-        transition: { 
-          duration: 0.5,
-          ease: "easeInOut"
-        }
-      }
-    };
-
-    const shouldShowShimmer = variant === "default" || variant === "destructive";
 
     return (
       <motion.button
@@ -150,45 +119,28 @@ const DynamicButton = React.forwardRef<HTMLButtonElement, DynamicButtonProps>(
         initial="rest"
         whileHover="hover"
         whileTap="tap"
-        transition={{ type: "spring", stiffness: 400, damping: 15 }}
+        transition={{ duration: 0.1 }}
         {...props}
       >
-        {/* Shimmer effect overlay */}
-        {shouldShowShimmer && (
-          <motion.div
-            className="absolute inset-0 -top-1 -bottom-1 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-            variants={shimmerVariants}
-            style={{ pointerEvents: "none" }}
-          />
-        )}
         {/* Icon on the left */}
         {Icon && iconPosition === "left" && (
-          <motion.div
-            variants={iconVariants}
-            className={cn("inline-flex", iconSpacing)}
-          >
+          <div className={cn("inline-flex", iconSpacing)}>
             <Icon className={cn(iconSize[size])} aria-hidden="true" />
-          </motion.div>
+          </div>
         )}
         
         {/* Label */}
         {size !== "icon" && (
-          <motion.span
-            variants={textVariants}
-            className="inline-block"
-          >
+          <span className="inline-block">
             {label}
-          </motion.span>
+          </span>
         )}
         
         {/* Icon on the right */}
         {Icon && iconPosition === "right" && (
-          <motion.div
-            variants={iconVariants}
-            className={cn("inline-flex", iconSpacing)}
-          >
+          <div className={cn("inline-flex", iconSpacing)}>
             <Icon className={cn(iconSize[size])} aria-hidden="true" />
-          </motion.div>
+          </div>
         )}
       </motion.button>
     );

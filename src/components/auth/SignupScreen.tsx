@@ -1,31 +1,39 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserCircle, Users, UserPlus, Upload, ChevronRight, ChevronLeft } from "lucide-react";
 import { DynamicInput } from "@/components/ui/dynamic-input";
 import { DynamicButton } from "@/components/ui/dynamic-button";
 import { DynamicSelect, type DynamicSelectOption } from "@/components/ui/dynamic-select";
-import { InteractiveImageDisplay } from "@/components/common/interactive-image-display";
-//import { cn } from "@/lib/utils";
+import { SimpleLoadingScreen } from "@/components/common/SimpleLoadingScreen";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
+import { ChevronRight, ChevronLeft, UserPlus, Upload, Users, UserCircle, Briefcase, Calendar, ImageIcon, Link } from "lucide-react";
 
 /**
- * Interface for form data collected across all steps
+ * Form values interface for signup submission
  */
-interface SignupFormData {
-  // Step 1: Personal Information
+export interface SignupFormData {
+  // Initial signup
   firstName: string;
   lastName: string;
   email: string;
   password: string;
-  coachLevel: string;
-  // Step 2: Team Information
-  teamName: string;
-  teamCategory: string;
-  teamLevel: string;
-  // Step 3: Players
-  players: Player[];
+  role: "coach" | "player";
+  // Coach specific
+  coachRole?: string;
+  coachLevel?: string;
+  teamName?: string;
+  teamCategory?: string;
+  teamLevel?: string;
+  players?: Player[];
+  // Player specific
+  dateOfBirth?: string;
+  playerPosition?: string;
+  jerseyNumber?: string;
+  profilePhoto?: string;
+  linkExistingProfile?: boolean;
+  existingProfileCode?: string;
 }
 
 /**
@@ -39,61 +47,79 @@ interface Player {
 }
 
 /**
- * SignupScreen Component
- * 
- * A multi-step signup form with dynamic image display.
- * Features three steps: Personal Info, Team Creation, and Player Management.
- * Images update dynamically based on coach level and team selections.
+ * Props for the SignupScreen component
  */
-export function SignupScreen() {
+export interface SignupScreenProps {
+  onSignupSubmit?: (data: SignupFormData) => void;
+  onNavigateToLogin?: () => void;
+}
+
+/**
+ * SignupScreen Component
+ */
+export function SignupScreen({
+  onSignupSubmit,
+  onNavigateToLogin
+}: SignupScreenProps) {
   // Step management
-  const [currentStep, setCurrentStep] = React.useState(1);
+  const [currentStep, setCurrentStep] = React.useState(0); // 0 = initial signup
+  const [isCoachFlow, setIsCoachFlow] = React.useState(false);
   
-  // Form data state
+  // Form state
   const [formData, setFormData] = React.useState<SignupFormData>({
     firstName: "",
     lastName: "",
     email: "",
     password: "",
+    role: "coach",
+    coachRole: "",
     coachLevel: "",
     teamName: "",
     teamCategory: "",
     teamLevel: "",
     players: [],
+    dateOfBirth: "",
+    playerPosition: "",
+    jerseyNumber: "",
+    profilePhoto: "",
+    linkExistingProfile: false,
+    existingProfileCode: "",
   });
-
-  // Form errors state
+  
   const [errors, setErrors] = React.useState<Partial<Record<keyof SignupFormData, string>>>({});
-
-  // Image display state
-  const [currentBaseImageKey, setCurrentBaseImageKey] = React.useState<string>("");
-  const [currentOverlayText, setCurrentOverlayText] = React.useState<string>("");
-
-  // Player form state (Step 3)
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  
+  // Player form state
   const [newPlayer, setNewPlayer] = React.useState<Omit<Player, "id">>({
     fullName: "",
     number: "",
     position: "",
   });
 
-  // Options for DynamicSelect components
+  // Options for selects
+  const coachRoleOptions: DynamicSelectOption[] = [
+    { value: "coach-chef", label: "Coach-chef" },
+    { value: "dg", label: "DG (Directeur Général)" },
+    { value: "directeur-hockey", label: "Directeur hockey" },
+  ];
+
   const coachLevelOptions: DynamicSelectOption[] = [
-    { value: "Initiation", label: "Initiation", imageKey: "Initiation" },
-    { value: "Régional", label: "Régional", imageKey: "Régional" },
-    { value: "Provincial", label: "Provincial", imageKey: "Provincial" },
-    { value: "National", label: "National", imageKey: "National" },
-    { value: "Haute Performance", label: "Haute Performance", imageKey: "Haute Performance" },
+    { value: "Initiation", label: "Initiation" },
+    { value: "Régional", label: "Régional" },
+    { value: "Provincial", label: "Provincial" },
+    { value: "National", label: "National" },
+    { value: "Haute Performance", label: "Haute Performance" },
   ];
 
   const teamCategoryOptions: DynamicSelectOption[] = [
-    { value: "U7 ( Pré-novice )", label: "U7 ( Pré-novice )", imageKey: "U7 ( Pré-novice )" },
-    { value: "U9 ( Novice )", label: "U9 ( Novice )", imageKey: "U9 ( Novice )" },
-    { value: "U11 ( Atome )", label: "U11 ( Atome )", imageKey: "U11 ( Atome )" },
-    { value: "U13 ( Pee-wee )", label: "U13 ( Pee-wee )", imageKey: "U13 ( Pee-wee )" },
-    { value: "U15 ( Bantam )", label: "U15 ( Bantam )", imageKey: "U15 ( Bantam )" },
-    { value: "U18 ( Midget )", label: "U18 ( Midget )", imageKey: "U18 ( Midget Espoir )" },
-    { value: "Junior", label: "Junior", imageKey: "U21 ( Junior )" },
-    { value: "Senior", label: "Senior", imageKey: "Senior" },
+    { value: "U7", label: "U7 (Pré-novice)" },
+    { value: "U9", label: "U9 (Novice)" },
+    { value: "U11", label: "U11 (Atome)" },
+    { value: "U13", label: "U13 (Pee-wee)" },
+    { value: "U15", label: "U15 (Bantam)" },
+    { value: "U18", label: "U18 (Midget)" },
+    { value: "Junior", label: "Junior" },
+    { value: "Senior", label: "Senior" },
   ];
 
   const teamLevelOptions: DynamicSelectOption[] = [
@@ -109,14 +135,21 @@ export function SignupScreen() {
     { value: "Gardien", label: "Gardien" },
     { value: "Défenseur", label: "Défenseur" },
     { value: "Attaquant", label: "Attaquant" },
-    { value: "Polyvalent", label: "Polyvalent" },
+    { value: "Centre", label: "Centre" },
+    { value: "Ailier gauche", label: "Ailier gauche" },
+    { value: "Ailier droit", label: "Ailier droit" },
+  ];
+
+  const playerPositionOptions: DynamicSelectOption[] = [
+    { value: "Gardien", label: "Gardien" },
+    { value: "Défenseur", label: "Défenseur" },
+    { value: "Attaquant", label: "Attaquant" },
   ];
 
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
     if (errors[name as keyof SignupFormData]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -126,63 +159,72 @@ export function SignupScreen() {
     }
   };
 
-  // Handle coach level change
-  const handleCoachLevelChange = (value: string, option: DynamicSelectOption) => {
-    setFormData(prev => ({ ...prev, coachLevel: value }));
-    setCurrentBaseImageKey(option.imageKey || "");
-    setCurrentOverlayText(""); // Clear overlay when showing coach
-    setErrors(prev => ({ ...prev, coachLevel: undefined }));
-  };
-
-  // Handle team category change
-  const handleTeamCategoryChange = (value: string, option: DynamicSelectOption) => {
-    setFormData(prev => ({ ...prev, teamCategory: value }));
-    setCurrentBaseImageKey(option.imageKey || "");
-    setErrors(prev => ({ ...prev, teamCategory: undefined }));
-  };
-
-  // Handle team level change
-  const handleTeamLevelChange = (value: string) => {
-    setFormData(prev => ({ ...prev, teamLevel: value }));
-    setCurrentOverlayText(value);
+  // Handle role toggle
+  const handleRoleChange = (role: "coach" | "player") => {
+    setFormData(prev => ({ ...prev, role }));
   };
 
   // Validate current step
   const validateStep = (step: number): boolean => {
     const newErrors: Partial<Record<keyof SignupFormData, string>> = {};
 
-    if (step === 1) {
+    if (step === 0) {
+      // Initial signup validation
       if (!formData.firstName) newErrors.firstName = "Le prénom est requis";
-      if (!formData.lastName) newErrors.lastName = "Le nom est requis";
+      if (!formData.lastName) newErrors.lastName = "Le nom de famille est requis";
       if (!formData.email) {
-        newErrors.email = "L'email est requis";
+        newErrors.email = "Le courriel est requis";
       } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        newErrors.email = "Veuillez entrer un email valide";
+        newErrors.email = "Veuillez entrer une adresse courriel valide";
       }
       if (!formData.password) {
         newErrors.password = "Le mot de passe est requis";
-      } else if (formData.password.length < 6) {
-        newErrors.password = "Le mot de passe doit contenir au moins 6 caractères";
+      } else if (formData.password.length < 8) {
+        newErrors.password = "Le mot de passe doit contenir au moins 8 caractères";
       }
-      if (!formData.coachLevel) newErrors.coachLevel = "Le niveau d'entraîneur est requis";
-    } else if (step === 2) {
-      if (!formData.teamName) newErrors.teamName = "Le nom de l'équipe est requis";
-      if (!formData.teamCategory) newErrors.teamCategory = "La catégorie est requise";
+    } else if (step === 1 && isCoachFlow) {
+      // Coach role selection
+      if (!formData.coachRole) newErrors.coachRole = "Veuillez sélectionner votre rôle";
+    } else if (step === 2 && isCoachFlow) {
+      // Personal info
+      if (!formData.coachLevel) newErrors.coachLevel = "Le niveau d&apos;entraîneur est requis";
+    } else if (step === 3 && isCoachFlow) {
+      // Team creation
+      if (!formData.teamName) newErrors.teamName = "Le nom de l&apos;équipe est requis";
+      if (!formData.teamCategory) newErrors.teamCategory = "La catégorie d&apos;équipe est requise";
+    } else if (step === 1 && !isCoachFlow) {
+      // Player personal info
+      if (!formData.dateOfBirth) newErrors.dateOfBirth = "La date de naissance est requise";
+      if (!formData.playerPosition) newErrors.playerPosition = "La position est requise";
+      if (!formData.jerseyNumber) newErrors.jerseyNumber = "Le numéro de chandail est requis";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Navigation functions
+  // Handle initial signup
+  const handleInitialSignup = () => {
+    if (!validateStep(0)) return;
+    
+    if (formData.role === "coach") {
+      setIsCoachFlow(true);
+      setCurrentStep(1);
+    } else {
+      // Player flow - wait for instructions
+      setCurrentStep(1);
+    }
+  };
+
+  // Navigation
   const nextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 3));
+      setCurrentStep(prev => prev + 1);
     }
   };
 
   const prevStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+    setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
   // Add player
@@ -194,7 +236,7 @@ export function SignupScreen() {
       };
       setFormData(prev => ({
         ...prev,
-        players: [...prev.players, player],
+        players: [...(prev.players || []), player],
       }));
       setNewPlayer({ fullName: "", number: "", position: "" });
     }
@@ -204,377 +246,742 @@ export function SignupScreen() {
   const removePlayer = (playerId: string) => {
     setFormData(prev => ({
       ...prev,
-      players: prev.players.filter(p => p.id !== playerId),
+      players: prev.players?.filter(p => p.id !== playerId) || [],
     }));
   };
 
-  // Handle final submission
-  const handleSubmit = () => {
-    console.log("Signup completed with data:", formData);
-    // Redirect directly to login page after signup completion
-    window.location.href = "/";
+  // Final submission
+  const handleFinalSubmit = () => {
+    setIsSubmitting(true);
+    setTimeout(() => {
+      if (onSignupSubmit) {
+        onSignupSubmit(formData);
+      } else {
+        console.log("Signup completed:", formData);
+        window.location.href = formData.role === "coach" ? "/dashboard/coach" : "/player";
+      }
+      setIsSubmitting(false);
+    }, 2000);
   };
 
   // Animation variants
-  const stepVariants = {
-    initial: { opacity: 0, x: 50 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -50 },
+  const formVariants = {
+    hidden: { opacity: 0, x: -30 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.5 } },
+    exit: { opacity: 0, x: 30, transition: { duration: 0.3 } }
+  };
+
+  const imageVariants = {
+    hidden: { opacity: 0, scale: 1.1 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 0.8,
+        ease: "easeOut"
+      }
+    }
   };
 
   // Render step content
   const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <motion.div
-            key="step1"
-            variants={stepVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3 }}
-            className="space-y-4"
-          >
-            <div className="flex items-center space-x-3 mb-6">
-              <UserCircle className="w-8 h-8 text-red-600" />
+    // Initial signup form
+    if (currentStep === 0) {
+      return (
+        <motion.div
+          key="initial-signup"
+          variants={formVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
+          <div className="mb-6">
+            <h1 className="text-xl font-bold text-gray-900 mb-1">Créer un compte</h1>
+            <p className="text-gray-600 text-sm">Commencez votre parcours hockey avec UpGr8</p>
+          </div>
+
+          <div className="mb-4">
+            <p className="text-sm font-medium text-gray-700 mb-2">Je suis un :</p>
+            <div className="flex rounded-lg border border-gray-200 p-1">
+              <button
+                type="button"
+                onClick={() => handleRoleChange("coach")}
+                className={cn(
+                  "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200",
+                  formData.role === "coach"
+                    ? "bg-red-600 text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                )}
+              >
+                Entraîneur
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRoleChange("player")}
+                className={cn(
+                  "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200",
+                  formData.role === "player"
+                    ? "bg-red-600 text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                )}
+              >
+                Joueur
+              </button>
+            </div>
+          </div>
+
+          <form className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Informations personnelles</h2>
-                <p className="text-gray-600">Créez votre profil d&apos;entraîneur</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <DynamicInput
-                label="Prénom"
-                name="firstName"
-                type="text"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                error={errors.firstName}
-                placeholder="Jean"
-              />
-              <DynamicInput
-                label="Nom"
-                name="lastName"
-                type="text"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                error={errors.lastName}
-                placeholder="Dupont"
-              />
-            </div>
-
-            <DynamicInput
-              label="Email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              error={errors.email}
-              placeholder="jean.dupont@example.com"
-            />
-
-            <DynamicInput
-              label="Mot de passe"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              error={errors.password}
-              placeholder="••••••••"
-            />
-
-            <DynamicSelect
-              label="Niveau d'entraîneur"
-              placeholder="Sélectionnez votre niveau"
-              options={coachLevelOptions}
-              value={formData.coachLevel}
-              onValueChange={handleCoachLevelChange}
-              containerClassName={errors.coachLevel ? "error" : ""}
-            />
-            {errors.coachLevel && (
-              <p className="text-sm text-red-600 -mt-2">{errors.coachLevel}</p>
-            )}
-          </motion.div>
-        );
-
-      case 2:
-        return (
-          <motion.div
-            key="step2"
-            variants={stepVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3 }}
-            className="space-y-4"
-          >
-            <div className="flex items-center space-x-3 mb-6">
-              <Users className="w-8 h-8 text-red-600" />
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Créer votre équipe</h2>
-                <p className="text-gray-600">Définissez les informations de votre équipe</p>
-              </div>
-            </div>
-
-            <DynamicInput
-              label="Nom de l'équipe"
-              name="teamName"
-              type="text"
-              value={formData.teamName}
-              onChange={handleInputChange}
-              error={errors.teamName}
-              placeholder="Les Étoiles de Montréal"
-            />
-
-            <DynamicSelect
-              label="Catégorie"
-              placeholder="Sélectionnez une catégorie"
-              options={teamCategoryOptions}
-              value={formData.teamCategory}
-              onValueChange={handleTeamCategoryChange}
-              containerClassName={errors.teamCategory ? "error" : ""}
-            />
-            {errors.teamCategory && (
-              <p className="text-sm text-red-600 -mt-2">{errors.teamCategory}</p>
-            )}
-
-            <DynamicSelect
-              label="Niveau (Optionnel)"
-              placeholder="Sélectionnez un niveau"
-              options={teamLevelOptions}
-              value={formData.teamLevel}
-              onValueChange={handleTeamLevelChange}
-              disabled={!formData.teamCategory}
-            />
-          </motion.div>
-        );
-
-      case 3:
-        return (
-          <motion.div
-            key="step3"
-            variants={stepVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3 }}
-            className="space-y-4"
-          >
-            <div className="flex items-center space-x-3 mb-6">
-              <UserPlus className="w-8 h-8 text-red-600" />
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Ajouter vos joueurs</h2>
-                <p className="text-gray-600">Construisez votre roster</p>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-lg font-medium text-gray-900">
-                {formData.players.length} joueur{formData.players.length !== 1 && "s"} ajouté{formData.players.length !== 1 && "s"}
-              </p>
-            </div>
-
-            {/* Add player form */}
-            <div className="space-y-4 border rounded-lg p-4">
-              <h3 className="font-medium text-gray-900">Ajouter un joueur</h3>
-              <div className="grid grid-cols-2 gap-4">
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Prénom
+                </label>
                 <DynamicInput
-                  label="Nom complet"
                   type="text"
-                  value={newPlayer.fullName}
-                  onChange={(e) => setNewPlayer(prev => ({ ...prev, fullName: e.target.value }))}
-                  placeholder="Marie Tremblay"
-                />
-                <DynamicInput
-                  label="Numéro"
-                  type="number"
-                  value={newPlayer.number}
-                  onChange={(e) => setNewPlayer(prev => ({ ...prev, number: e.target.value }))}
-                  placeholder="99"
+                  name="firstName"
+                  id="firstName"
+                  placeholder="Jean"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  error={errors.firstName}
+                  className="h-10 text-sm"
                 />
               </div>
-              <DynamicSelect
-                label="Position"
-                placeholder="Sélectionnez une position"
-                options={positionOptions}
-                value={newPlayer.position}
-                onValueChange={(value) => setNewPlayer(prev => ({ ...prev, position: value }))}
-              />
-              <DynamicButton
-                label="Ajouter le joueur"
-                onClick={addPlayer}
-                variant="secondary"
-                icon={UserPlus}
-                disabled={!newPlayer.fullName || !newPlayer.number}
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nom de famille
+                </label>
+                <DynamicInput
+                  type="text"
+                  name="lastName"
+                  id="lastName"
+                  placeholder="Dupont"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  error={errors.lastName}
+                  className="h-10 text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Adresse courriel
+              </label>
+              <DynamicInput
+                type="email"
+                name="email"
+                id="email"
+                placeholder="jean@exemple.com"
+                value={formData.email}
+                onChange={handleInputChange}
+                error={errors.email}
+                className="h-10 text-sm"
               />
             </div>
 
-            {/* Players list */}
-            {formData.players.length > 0 && (
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Mot de passe
+              </label>
+              <DynamicInput
+                type="password"
+                name="password"
+                id="password"
+                placeholder="Créez un mot de passe robuste"
+                value={formData.password}
+                onChange={handleInputChange}
+                error={errors.password}
+                className="h-10 text-sm"
+              />
+              <p className="mt-1 text-xs text-gray-500">Doit contenir au moins 8 caractères</p>
+            </div>
+
+            <div className="text-xs text-gray-600">
+              En créant un compte, vous acceptez nos{" "}
+              <a href="#" className="font-medium text-red-600 hover:text-red-700">
+                Conditions d&apos;utilisation
+              </a>{" "}
+              et notre{" "}
+              <a href="#" className="font-medium text-red-600 hover:text-red-700">
+                Politique de confidentialité
+              </a>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleInitialSignup}
+              className="w-full py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 transition-colors"
+            >
+              Créer le compte
+            </button>
+
+            <div className="text-center text-sm">
+              <span className="text-gray-600">
+                Vous avez déjà un compte ?{" "}
+                <a 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (onNavigateToLogin) {
+                      onNavigateToLogin();
+                    } else {
+                      window.location.href = "/";
+                    }
+                  }}
+                  className="font-medium text-red-600 hover:text-red-700"
+                >
+                  Se connecter
+                </a>
+              </span>
+            </div>
+          </form>
+        </motion.div>
+      );
+    }
+
+    // Coach flow
+    if (isCoachFlow) {
+      switch (currentStep) {
+        case 1:
+          // Coach role selection
+          return (
+            <motion.div
+              key="coach-role"
+              variants={formVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="space-y-4"
+            >
+              <div className="flex items-center space-x-2 mb-4">
+                <Briefcase className="w-6 h-6 text-red-600" />
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Sélectionnez votre rôle</h2>
+                  <p className="text-gray-600 text-sm">Choisissez votre poste d&apos;entraîneur</p>
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <h3 className="font-medium text-gray-900">Joueurs ajoutés</h3>
-                {formData.players.map(player => (
-                  <div
-                    key={player.id}
-                    className="flex items-center justify-between bg-white border rounded-lg p-3"
+                {coachRoleOptions.map((option) => (
+                  <label
+                    key={option.value}
+                    className={cn(
+                      "flex items-center p-3 border rounded-lg cursor-pointer transition-all text-sm",
+                      formData.coachRole === option.value
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    )}
                   >
-                    <div>
-                      <span className="font-medium">#{player.number}</span> - {player.fullName}
-                      {player.position && <span className="text-gray-500 ml-2">({player.position})</span>}
-                    </div>
-                    <DynamicButton
-                      label="Retirer"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removePlayer(player.id)}
+                    <input
+                      type="radio"
+                      name="coachRole"
+                      value={option.value}
+                      checked={formData.coachRole === option.value}
+                      onChange={(e) => setFormData(prev => ({ ...prev, coachRole: e.target.value }))}
+                      className="sr-only"
                     />
-                  </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{option.label}</p>
+                    </div>
+                    <div className={cn(
+                      "w-4 h-4 rounded-full border-2",
+                      formData.coachRole === option.value
+                        ? "border-red-500 bg-red-500"
+                        : "border-gray-300"
+                    )}>
+                      {formData.coachRole === option.value && (
+                        <div className="w-full h-full rounded-full bg-white scale-50" />
+                      )}
+                    </div>
+                  </label>
                 ))}
               </div>
-            )}
+              {errors.coachRole && (
+                <p className="text-sm text-red-600">{errors.coachRole}</p>
+              )}
+            </motion.div>
+          );
 
-            {/* CSV Import */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+        case 2:
+          // Personal information
+          return (
+            <motion.div
+              key="personal-info"
+              variants={formVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="space-y-4"
+            >
+              <div className="flex items-center space-x-2 mb-4">
+                <UserCircle className="w-6 h-6 text-red-600" />
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Informations entraîneur</h2>
+                  <p className="text-gray-600 text-sm">Parlez-nous de votre expérience d&apos;entraîneur</p>
+                </div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">OU</span>
-              </div>
-            </div>
 
-            <div className="border rounded-lg p-4 text-center">
-              <p className="text-sm text-gray-600 mb-3">Importer depuis un fichier CSV</p>
-              <DynamicButton
-                label="Choisir un fichier"
-                variant="outline"
-                icon={Upload}
-                onClick={() => alert("Import CSV - Fonctionnalité à venir")}
-              />
-            </div>
-          </motion.div>
-        );
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Niveau d&apos;entraîneur
+                </label>
+                <DynamicSelect
+                  placeholder="Sélectionnez votre niveau"
+                  options={coachLevelOptions}
+                  value={formData.coachLevel || ""}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, coachLevel: value }))}
+                />
+                {errors.coachLevel && (
+                  <p className="text-sm text-red-600 mt-1">{errors.coachLevel}</p>
+                )}
+              </div>
+            </motion.div>
+          );
+
+        case 3:
+          // Team creation
+          return (
+            <motion.div
+              key="team-creation"
+              variants={formVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="space-y-4"
+            >
+              <div className="flex items-center space-x-2 mb-4">
+                <Users className="w-6 h-6 text-red-600" />
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Créez votre équipe</h2>
+                  <p className="text-gray-600 text-sm">Configurez les informations de votre équipe</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Nom de l&apos;équipe
+                </label>
+                <DynamicInput
+                  type="text"
+                  name="teamName"
+                  placeholder="Entrez le nom de l&apos;équipe"
+                  value={formData.teamName || ""}
+                  onChange={handleInputChange}
+                  error={errors.teamName}
+                  className="h-10 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Catégorie
+                </label>
+                <DynamicSelect
+                  placeholder="Sélectionnez la catégorie"
+                  options={teamCategoryOptions}
+                  value={formData.teamCategory || ""}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, teamCategory: value }))}
+                />
+                {errors.teamCategory && (
+                  <p className="text-sm text-red-600 mt-1">{errors.teamCategory}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Niveau (Optionnel)
+                </label>
+                <DynamicSelect
+                  placeholder="Sélectionnez le niveau"
+                  options={teamLevelOptions}
+                  value={formData.teamLevel || ""}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, teamLevel: value }))}
+                  disabled={!formData.teamCategory}
+                />
+              </div>
+            </motion.div>
+          );
+
+        case 4:
+          // Player management
+          return (
+            <motion.div
+              key="player-management"
+              variants={formVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="space-y-4"
+            >
+              <div className="flex items-center space-x-2 mb-4">
+                <UserPlus className="w-6 h-6 text-red-600" />
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Ajouter des joueurs</h2>
+                  <p className="text-gray-600 text-sm">Construisez l&apos;alignement de votre équipe (optionnel)</p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-lg font-medium text-gray-900">
+                  {formData.players?.length || 0} joueur{formData.players?.length !== 1 && "s"} ajouté{formData.players?.length !== 1 && "s"}
+                </p>
+              </div>
+
+              <div className="space-y-4 border rounded-lg p-4">
+                <h3 className="font-medium text-gray-900">Ajouter un joueur</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <DynamicInput
+                    type="text"
+                    placeholder="Nom complet"
+                    value={newPlayer.fullName}
+                    onChange={(e) => setNewPlayer(prev => ({ ...prev, fullName: e.target.value }))
+                    }
+                    className="h-10"
+                  />
+                  <DynamicInput
+                    type="number"
+                    placeholder="Numéro"
+                    value={newPlayer.number}
+                    onChange={(e) => setNewPlayer(prev => ({ ...prev, number: e.target.value }))
+                    }
+                    className="h-10"
+                  />
+                </div>
+                <DynamicSelect
+                  placeholder="Sélectionnez la position"
+                  options={positionOptions}
+                  value={newPlayer.position}
+                  onValueChange={(value) => setNewPlayer(prev => ({ ...prev, position: value }))}
+                />
+                <DynamicButton
+                  label="Ajouter le joueur"
+                  onClick={addPlayer}
+                  variant="secondary"
+                  icon={UserPlus}
+                  disabled={!newPlayer.fullName || !newPlayer.number}
+                  className="w-full"
+                />
+              </div>
+
+              {formData.players && formData.players.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-medium text-gray-900">Joueurs ajoutés</h3>
+                  <div className="max-h-40 overflow-y-auto space-y-2">
+                    {formData.players.map(player => (
+                      <div
+                        key={player.id}
+                        className="flex items-center justify-between bg-white border rounded-lg p-3"
+                      >
+                        <div>
+                          <span className="font-medium">#{player.number}</span> - {player.fullName}
+                          {player.position && <span className="text-gray-500 ml-2">({player.position})</span>}
+                        </div>
+                        <button
+                          onClick={() => removePlayer(player.id)}
+                          className="text-red-600 hover:text-red-700 text-sm"
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t pt-4">
+                <DynamicButton
+                  label="Importer depuis CSV"
+                  variant="outline"
+                  icon={Upload}
+                  onClick={() => alert("Import CSV bientôt disponible")}
+                  className="w-full"
+                />
+              </div>
+            </motion.div>
+          );
+      }
+    }
+
+    // Player flow
+    if (!isCoachFlow) {
+      switch (currentStep) {
+        case 1:
+          // Player personal information
+          return (
+            <motion.div
+              key="player-info"
+              variants={formVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="space-y-4"
+            >
+              <div className="flex items-center space-x-2 mb-4">
+                <UserCircle className="w-6 h-6 text-red-600" />
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Informations joueur</h2>
+                  <p className="text-gray-600 text-sm">Parlez-nous de vous</p>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Date de naissance
+                </label>
+                <div className="relative">
+                  <DynamicInput
+                    type="date"
+                    name="dateOfBirth"
+                    id="dateOfBirth"
+                    value={formData.dateOfBirth || ""}
+                    onChange={handleInputChange}
+                    error={errors.dateOfBirth}
+                    className="h-10 text-sm pl-10"
+                  />
+                  <Calendar className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Position
+                </label>
+                <DynamicSelect
+                  placeholder="Sélectionnez votre position"
+                  options={playerPositionOptions}
+                  value={formData.playerPosition || ""}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, playerPosition: value }))}
+                />
+                {errors.playerPosition && (
+                  <p className="text-sm text-red-600 mt-1">{errors.playerPosition}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="jerseyNumber" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Numéro de chandail
+                </label>
+                <DynamicInput
+                  type="number"
+                  name="jerseyNumber"
+                  id="jerseyNumber"
+                  placeholder="99"
+                  value={formData.jerseyNumber || ""}
+                  onChange={handleInputChange}
+                  error={errors.jerseyNumber}
+                  className="h-10 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Photo de profil (optionnelle)
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer">
+                  <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-2 text-sm text-gray-600">Cliquez pour télécharger une photo</p>
+                  <p className="text-xs text-gray-500">PNG, JPG jusqu&apos;à 5 Mo</p>
+                </div>
+              </div>
+            </motion.div>
+          );
+
+        case 2:
+          // Link existing profile
+          return (
+            <motion.div
+              key="link-profile"
+              variants={formVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="space-y-4"
+            >
+              <div className="flex items-center space-x-2 mb-4">
+                <Link className="w-6 h-6 text-red-600" />
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Lier un profil existant</h2>
+                  <p className="text-gray-600 text-sm">Connectez-vous à votre historique d&apos;évaluations</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="profileOption"
+                    checked={!formData.linkExistingProfile}
+                    onChange={() => setFormData(prev => ({ ...prev, linkExistingProfile: false }))}
+                    className="text-primary"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">Créer un nouveau profil</p>
+                    <p className="text-sm text-gray-600">Commencer avec un nouveau profil de joueur</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="profileOption"
+                    checked={formData.linkExistingProfile === true}
+                    onChange={() => setFormData(prev => ({ ...prev, linkExistingProfile: true }))}
+                    className="text-primary"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">Lier un profil existant</p>
+                    <p className="text-sm text-gray-600">Se connecter aux évaluations des camps précédents</p>
+                  </div>
+                </label>
+              </div>
+
+              {formData.linkExistingProfile && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label htmlFor="existingProfileCode" className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Code de profil ou inscription au camp
+                    </label>
+                    <DynamicInput
+                      type="text"
+                      name="existingProfileCode"
+                      id="existingProfileCode"
+                      placeholder="Entrez le code fourni par votre entraîneur"
+                      value={formData.existingProfileCode || ""}
+                      onChange={handleInputChange}
+                      className="h-10 text-sm"
+                    />
+                    <p className="mt-2 text-sm text-gray-500">
+                      Demandez à votre entraîneur votre code de profil ou utilisez votre numéro d&apos;inscription au camp
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>Conseil :</strong> Si vous n&apos;avez pas de code, vous pouvez quand même créer un nouveau profil. 
+                      Votre entraîneur pourra lier vos évaluations plus tard.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          );
+      }
     }
   };
 
+  // Calculate total steps
+  const totalSteps = isCoachFlow ? 4 : 2;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">
-      {/* Centered Form Section */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-lg">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            {/* Progress Indicator */}
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-2">
-                <p className="text-sm font-medium text-gray-600">
-                  Étape {currentStep} sur 3
-                </p>
-                <p className="text-sm text-gray-500">
-                  {currentStep === 1 && "Informations personnelles"}
-                  {currentStep === 2 && "Création d'équipe"}
-                  {currentStep === 3 && "Ajout de joueurs"}
-                </p>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <motion.div
-                  className="bg-red-600 h-2 rounded-full"
-                  initial={{ width: "0%" }}
-                  animate={{ width: `${(currentStep / 3) * 100}%` }}
-                  transition={{ duration: 0.3 }}
+    <>
+      <SimpleLoadingScreen isLoading={isSubmitting} />
+      
+      <div className="min-h-screen flex">
+        {/* Left Side - Form */}
+        <motion.div 
+          className="w-full lg:w-[40%] flex items-center justify-center p-6 lg:p-8 bg-white"
+          initial="hidden"
+          animate="visible"
+          variants={formVariants}
+        >
+          <div className="w-full max-w-sm">
+            {/* Logo */}
+            {currentStep === 0 && (
+              <div className="mb-6">
+                <Image 
+                  src="/logo.png" 
+                  alt="UpGr8 Logo" 
+                  width={140} 
+                  height={49}
+                  priority
+                  className="w-auto h-12"
                 />
               </div>
-            </div>
+            )}
+
+            {/* Progress indicator for multi-step */}
+            {currentStep > 0 && (
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-sm font-medium text-gray-600">
+                    Étape {currentStep} de {totalSteps}
+                  </p>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <motion.div
+                    className="bg-red-600 h-2 rounded-full"
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Step Content */}
             <AnimatePresence mode="wait">
               {renderStepContent()}
             </AnimatePresence>
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8">
-              {currentStep > 1 ? (
-                <DynamicButton
-                  label="Retour"
-                  variant="outline"
+            {/* Navigation for multi-step */}
+            {currentStep > 0 && (
+              <div className="flex justify-between mt-6">
+                <button
+                  type="button"
                   onClick={prevStep}
-                  icon={ChevronLeft}
-                />
-              ) : (
-                <div />
-              )}
-
-              {currentStep < 3 ? (
-                <DynamicButton
-                  label="Continuer"
-                  onClick={nextStep}
-                  icon={ChevronRight}
-                  iconPosition="right"
-                />
-              ) : (
-                <DynamicButton
-                  label="Terminer"
-                  onClick={handleSubmit}
-                  variant="default"
-                />
-              )}
-            </div>
-
-            <div className="mt-6 text-center border-t pt-6">
-              <p className="text-sm text-gray-600">
-                Vous avez déjà un compte?{" "}
-                <Link
-                  href="/"
-                  className="text-red-600 font-medium hover:text-red-700 hover:underline"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center"
                 >
-                  Se connecter
-                </Link>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Image Display Section - Bottom Right */}
-      <AnimatePresence>
-        {currentBaseImageKey && (
-          <div className="fixed bottom-0 right-0 w-[500px] h-[500px] pointer-events-none">
-            <motion.div
-              key={`${currentStep}-${currentBaseImageKey}`}
-              initial={{ opacity: 0, scale: 0.8, x: 100, y: 100 }}
-              animate={{ 
-                opacity: 1, 
-                scale: 1, 
-                x: 0, 
-                y: 0,
-                rotate: currentStep === 2 ? -5 : 0,
-              }}
-              exit={{ opacity: 0, scale: 0.8, x: 100, y: 100 }}
-              transition={{ 
-                duration: 0.8, 
-                type: "spring", 
-                stiffness: 100,
-                damping: 20
-              }}
-              className="relative w-full h-full"
-            >
-              {/* Image container */}
-              <div className="absolute bottom-0 right-0 w-[450px] h-[450px]">
-                <InteractiveImageDisplay
-                  baseImageKey={currentBaseImageKey}
-                  overlayText={currentOverlayText}
-                  altText="Hockey player visualization"
-                  className="w-full h-full"
-                  imageClassName="object-contain"
-                  overlayClassName="text-3xl w-20 h-20"
-                />
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Retour
+                </button>
+                
+                {(isCoachFlow && currentStep < 4) || (!isCoachFlow && currentStep < 2) ? (
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 transition-colors flex items-center"
+                  >
+                    Continuer
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleFinalSubmit}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Création..." : "Terminer"}
+                  </button>
+                )}
               </div>
-            </motion.div>
+            )}
           </div>
-        )}
-      </AnimatePresence>
-    </div>
+        </motion.div>
+
+        {/* Right Side - Image */}
+        <motion.div 
+          className="hidden lg:block lg:w-[60%] relative overflow-hidden bg-gray-100"
+          initial="hidden"
+          animate="visible"
+          variants={imageVariants}
+        >
+          <Image
+            src="/signup.jpg"
+            alt="Hockey players"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 to-transparent" />
+        </motion.div>
+      </div>
+    </>
   );
 }
 

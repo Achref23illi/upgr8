@@ -1,26 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
-import {
-  Search,
-  Bell,
-  Menu,
-  Settings,
-  User,
-  LogOut,
-  MessageSquare,
-  Calendar,
-  TrendingUp
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { Bell, Menu, Search, User, Settings, LogOut, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,236 +14,209 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  //Tooltip,
-  //TooltipContent,
-  TooltipProvider,
-  //TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-/**
- * Props for the Topbar component
- */
 interface TopbarProps {
-  /**
-   * Function to call when the hamburger/menu icon is clicked
-   */
-  onToggleSidebar: () => void;
-  /**
-   * Optional custom classes
-   */
+  isCollapsed: boolean;
+  setIsCollapsed: (isCollapsed: boolean) => void;
   className?: string;
 }
 
-/**
- * Mock notification data
- */
-interface Notification {
-  id: string;
-  title: string;
-  description: string;
-  time: string;
-  read: boolean;
-  icon: React.ElementType;
-}
-
-/**
- * Topbar Component
- * 
- * Header bar with search, notifications, and user menu.
- * Responsive design with mobile hamburger menu.
- */
-export function Topbar({ onToggleSidebar, className }: TopbarProps) {
-  const [searchValue, setSearchValue] = React.useState("");
-
-  // Mock notifications data
-  const notifications: Notification[] = [
-    {
-      id: "1",
-      title: "Nouvelle évaluation",
-      description: "Martin Dubois a été évalué",
-      time: "Il y a 5 min",
-      read: false,
-      icon: TrendingUp,
-    },
-    {
-      id: "2",
-      title: "Entraînement planifié",
-      description: "Entraînement demain à 19h00",
-      time: "Il y a 1h",
-      read: false,
-      icon: Calendar,
-    },
-    {
-      id: "3",
-      title: "Message reçu",
-      description: "Nouveau message des parents",
-      time: "Il y a 2h",
-      read: true,
-      icon: MessageSquare,
-    },
-  ];
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Searching for:", searchValue);
-    // TODO: Implement search functionality
-  };
+export function Topbar({ isCollapsed, setIsCollapsed, className }: TopbarProps) {
+  const router = useRouter();
+  const [showNotifications, setShowNotifications] = React.useState(false);
+  const notificationRef = React.useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
-    console.log("Logging out...");
     // Clear any stored authentication data
-    localStorage.removeItem('authToken');
-    sessionStorage.clear();
+    localStorage.removeItem('userType');
+    localStorage.removeItem('userData');
     
-    // Redirect to login page
-    window.location.href = "/";
+    // Navigate to login page
+    router.push('/');
   };
 
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotifications]);
+  
+  // Mock notifications data
+  const mockNotifications = [
+    {
+      id: 1,
+      title: "Nouvelle évaluation terminée",
+      message: "Alexandre Tremblay a terminé son évaluation de tir",
+      time: "Il y a 2 minutes",
+      read: false,
+      type: "evaluation"
+    },
+    {
+      id: 2,
+      title: "Rappel d&apos;entraînement",
+      message: "N&apos;oubliez pas : L&apos;entraînement technique commence dans 30 minutes",
+      time: "Il y a 28 minutes",
+      read: false,
+      type: "reminder"
+    },
+    {
+      id: 3,
+      title: "Nouveau joueur inscrit",
+      message: "Emma Gagnon a été ajoutée à l&apos;équipe Titans U15 AAA",
+      time: "Il y a 1 heure",
+      read: true,
+      type: "registration"
+    },
+    {
+      id: 4,
+      title: "Objectif atteint",
+      message: "Félicitations ! Vous avez complété 100 évaluations ce mois-ci",
+      time: "Il y a 2 heures",
+      read: true,
+      type: "achievement"
+    },
+    {
+      id: 5,
+      title: "Mise à jour de l&apos;horaire",
+      message: "Session d&apos;entraînement déplacée à 19h00 - Aréna 2",
+      time: "Il y a 1 jour",
+      read: true,
+      type: "schedule"
+    }
+  ];
+
+  const unreadCount = mockNotifications.filter(n => !n.read).length;
+
   return (
-    <TooltipProvider delayDuration={0}>
-      <header
-        className={cn(
-          "sticky top-0 z-30 flex h-16 items-center justify-between bg-white border-b border-gray-200 px-4 md:px-6",
-          className
-        )}
-      >
-        {/* Left Section - Mobile Menu & Search */}
-        <div className="flex items-center space-x-4 flex-1">
-          {/* Mobile Hamburger Menu */}
+    <header className={cn(
+      "fixed top-0 right-0 z-30 h-16 bg-white border-b border-gray-200 shadow-sm transition-all duration-300",
+      isCollapsed ? "left-16" : "left-64",
+      className
+    )}>
+      <div className="flex items-center justify-between h-full px-6">
+        {/* Left section */}
+        <div className="flex items-center space-x-4">
           <Button
             variant="ghost"
-            size="icon"
-            onClick={onToggleSidebar}
-            className="md:hidden"
+            size="sm"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="w-5 h-5" />
           </Button>
-
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="relative max-w-md flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          
+          {/* Search */}
+          <div className="relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              type="search"
-              placeholder="Rechercher joueurs, équipes..."
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              className="pl-9 pr-4 w-full"
+              placeholder="Rechercher joueurs, équipes, évaluations..."
+              className="pl-10 w-80 bg-gray-50 border-gray-200 focus:bg-white focus:border-red-300 focus:ring-red-200"
             />
-          </form>
+          </div>
         </div>
 
-        {/* Right Section - Notifications & User Menu */}
-        <div className="flex items-center space-x-2">
+        {/* Right section */}
+        <div className="flex items-center space-x-4">
           {/* Notifications */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-medium text-white"
-                  >
-                    {unreadCount}
-                  </motion.div>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel className="flex items-center justify-between">
-                <span>Notifications</span>
-                {unreadCount > 0 && (
-                  <span className="text-xs text-red-600 font-normal">
-                    {unreadCount} non lues
-                  </span>
-                )}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="max-h-64 overflow-y-auto">
-                {notifications.map((notification) => {
-                  const Icon = notification.icon;
-                  return (
-                    <DropdownMenuItem
-                      key={notification.id}
-                      className={cn(
-                        "flex items-start space-x-3 p-3 cursor-pointer",
-                        !notification.read && "bg-blue-50/50"
-                      )}
-                    >
-                      <div className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-full",
-                        notification.read ? "bg-gray-100" : "bg-red-100"
-                      )}>
-                        <Icon className={cn(
-                          "h-4 w-4",
-                          notification.read ? "text-gray-600" : "text-red-600"
-                        )} />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium leading-none">
-                          {notification.title}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {notification.description}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {notification.time}
-                        </p>
-                      </div>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </div>
-              {notifications.length === 0 && (
-                <div className="p-4 text-center text-sm text-gray-500">
-                  Aucune notification
-                </div>
+          <div className="relative" ref={notificationRef}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="relative"
+              onClick={() => setShowNotifications(!showNotifications)}
+            >
+              <Bell className="w-5 h-5 text-gray-500" />
+              {unreadCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-red-500 text-white hover:bg-red-500 flex items-center justify-center">
+                  {unreadCount}
+                </Badge>
               )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </Button>
+            
+            {showNotifications && (
+              <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                <div className="border-b border-gray-100 p-4">
+                  <h3 className="font-semibold text-gray-900">Notifications</h3>
+                  <p className="text-sm text-gray-500">{unreadCount} nouvelles notifications</p>
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  {mockNotifications.map((notification) => (
+                    <div 
+                      key={notification.id}
+                      className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer ${
+                        !notification.read ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <p className="font-medium text-sm text-gray-900">{notification.title}</p>
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                          <p className="text-xs text-gray-400 mt-2">{notification.time}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="p-3 border-t border-gray-100">
+                  <Button variant="ghost" className="w-full text-sm">
+                    Voir toutes les notifications
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
 
-          {/* User Profile Dropdown */}
+          {/* Profile Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src="/avatar.jpg" alt="Coach Avatar" />
-                  <AvatarFallback className="bg-red-100 text-red-600 font-semibold">
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-8 w-8 cursor-pointer">
+                  <AvatarImage src="/avatar.jpg" alt="Coach Martin" />
+                  <AvatarFallback className="bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold text-sm">
                     CM
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Coach Martin</p>
-                  <p className="text-xs leading-none text-gray-500">
-                    coach.martin@upgr8.com
-                  </p>
+                  <p className="text-sm font-medium text-gray-900">Entraîneur Martin</p>
+                  <p className="text-xs text-gray-500">entraineur.martin@upgr8.com</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="cursor-pointer"
-                onClick={() => window.location.href = "/dashboard/profile"}
-              >
+              <DropdownMenuItem className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
+                <span>Profil</span>
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="cursor-pointer"
-                onClick={() => window.location.href = "/dashboard/settings"}
-              >
+              <DropdownMenuItem className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Paramètres</span>
               </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
+                <HelpCircle className="mr-2 h-4 w-4" />
+                <span>Aide & Support</span>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
+              <DropdownMenuItem 
                 className="cursor-pointer text-red-600 focus:text-red-600"
                 onClick={handleLogout}
               >
@@ -268,7 +226,7 @@ export function Topbar({ onToggleSidebar, className }: TopbarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </header>
-    </TooltipProvider>
+      </div>
+    </header>
   );
 }

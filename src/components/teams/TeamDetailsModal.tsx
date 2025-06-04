@@ -7,11 +7,9 @@ import {
   Users, 
   User, 
   Shield, 
-  Target,
   //Star,
   Calendar,
   MapPin,
-  Trophy,
   Clock,
   TrendingUp,
   //Phone,
@@ -20,7 +18,6 @@ import {
   //Award,
   AlertTriangle
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -215,9 +212,6 @@ export function TeamDetailsModal({ isOpen, onClose, team }: TeamDetailsModalProp
               <div className={`${team.color} text-white p-6`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="bg-white/20 p-3 rounded-lg">
-                      <Users className="h-8 w-8" />
-                    </div>
                     <div>
                       <h2 className="text-2xl font-bold">{team.name}</h2>
                       <div className="flex items-center space-x-3 mt-2">
@@ -233,9 +227,12 @@ export function TeamDetailsModal({ isOpen, onClose, team }: TeamDetailsModalProp
                       </div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20">
-                    <X className="h-6 w-6" />
-                  </Button>
+                  <button 
+                    onClick={onClose} 
+                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg p-3 transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
                 </div>
               </div>
 
@@ -244,15 +241,12 @@ export function TeamDetailsModal({ isOpen, onClose, team }: TeamDetailsModalProp
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-3 border-b border-gray-200 bg-white rounded-none h-12">
                     <TabsTrigger value="roster" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
-                      <Users className="h-4 w-4 mr-2" />
                       Effectif
                     </TabsTrigger>
                     <TabsTrigger value="stats" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
-                      <TrendingUp className="h-4 w-4 mr-2" />
                       Statistiques
                     </TabsTrigger>
                     <TabsTrigger value="info" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
-                      <Calendar className="h-4 w-4 mr-2" />
                       Informations
                     </TabsTrigger>
                   </TabsList>
@@ -263,30 +257,26 @@ export function TeamDetailsModal({ isOpen, onClose, team }: TeamDetailsModalProp
                       {/* Quick Stats */}
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="flex items-center justify-between">
+                          <div>
                             <span className="text-sm text-gray-600">Joueurs Actifs</span>
-                            <Activity className="h-4 w-4 text-green-600" />
                           </div>
                           <p className="text-2xl font-bold text-gray-900">{activePlayer}</p>
                         </div>
                         <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="flex items-center justify-between">
+                          <div>
                             <span className="text-sm text-gray-600">Blessés</span>
-                            <AlertTriangle className="h-4 w-4 text-red-600" />
                           </div>
                           <p className="text-2xl font-bold text-gray-900">{injuredPlayers}</p>
                         </div>
                         <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="flex items-center justify-between">
+                          <div>
                             <span className="text-sm text-gray-600">Gardiens</span>
-                            <Shield className="h-4 w-4 text-purple-600" />
                           </div>
                           <p className="text-2xl font-bold text-gray-900">{goalies.length}</p>
                         </div>
                         <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="flex items-center justify-between">
+                          <div>
                             <span className="text-sm text-gray-600">Âge Moyen</span>
-                            <User className="h-4 w-4 text-blue-600" />
                           </div>
                           <p className="text-2xl font-bold text-gray-900">{team.averageAge}</p>
                         </div>
@@ -361,7 +351,6 @@ export function TeamDetailsModal({ isOpen, onClose, team }: TeamDetailsModalProp
                                       <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
                                           <Badge className={getStatusColor(player.status)}>
-                                            <StatusIcon className="h-3 w-3 mr-1" />
                                             {player.status === "active" ? "Actif" : 
                                              player.status === "injured" ? "Blessé" : "Suspendu"}
                                           </Badge>
@@ -389,46 +378,34 @@ export function TeamDetailsModal({ isOpen, onClose, team }: TeamDetailsModalProp
                       {/* Team Stats */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="bg-white border border-gray-200 rounded-lg p-4">
-                          <div className="flex items-center">
-                            <Trophy className="h-8 w-8 text-yellow-600" />
-                            <div className="ml-3">
-                              <p className="text-sm font-medium text-gray-600">Matchs Joués</p>
-                              <p className="text-2xl font-bold text-gray-900">{teamStats.totalGames}</p>
-                            </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Matchs Joués</p>
+                            <p className="text-2xl font-bold text-gray-900">{teamStats.totalGames}</p>
                           </div>
                         </div>
                         
                         <div className="bg-white border border-gray-200 rounded-lg p-4">
-                          <div className="flex items-center">
-                            <Target className="h-8 w-8 text-green-600" />
-                            <div className="ml-3">
-                              <p className="text-sm font-medium text-gray-600">Buts/Match</p>
-                              <p className="text-2xl font-bold text-gray-900">{teamStats.averageGoalsFor}</p>
-                            </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Buts/Match</p>
+                            <p className="text-2xl font-bold text-gray-900">{teamStats.averageGoalsFor}</p>
                           </div>
                         </div>
 
                         <div className="bg-white border border-gray-200 rounded-lg p-4">
-                          <div className="flex items-center">
-                            <Shield className="h-8 w-8 text-red-600" />
-                            <div className="ml-3">
-                              <p className="text-sm font-medium text-gray-600">Buts Encaissés/Match</p>
-                              <p className="text-2xl font-bold text-gray-900">{teamStats.averageGoalsAgainst}</p>
-                            </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Buts Encaissés/Match</p>
+                            <p className="text-2xl font-bold text-gray-900">{teamStats.averageGoalsAgainst}</p>
                           </div>
                         </div>
 
                         <div className="bg-white border border-gray-200 rounded-lg p-4">
-                          <div className="flex items-center">
-                            <TrendingUp className="h-8 w-8 text-blue-600" />
-                            <div className="ml-3">
-                              <p className="text-sm font-medium text-gray-600">Différentiel</p>
-                              <p className={`text-2xl font-bold ${
-                                teamStats.goalDifferential >= 0 ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {teamStats.goalDifferential >= 0 ? '+' : ''}{teamStats.goalDifferential}
-                              </p>
-                            </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Différentiel</p>
+                            <p className={`text-2xl font-bold ${
+                              teamStats.goalDifferential >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {teamStats.goalDifferential >= 0 ? '+' : ''}{teamStats.goalDifferential}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -438,7 +415,7 @@ export function TeamDetailsModal({ isOpen, onClose, team }: TeamDetailsModalProp
                         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                           <h3 className="text-lg font-semibold text-gray-900">Meilleurs Pointeurs</h3>
                         </div>
-                        <div className="p-6">
+                        <div className="p-6 max-h-96 overflow-y-auto">
                           <div className="space-y-4">
                             {topScorers.map((player, index) => (
                               <div key={player.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -511,15 +488,11 @@ export function TeamDetailsModal({ isOpen, onClose, team }: TeamDetailsModalProp
                       {/* Next Game */}
                       <div className="bg-white border border-gray-200 rounded-lg p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Prochain Match</h3>
-                        <div className="flex items-center space-x-4">
-                          <Calendar className="h-8 w-8 text-red-600" />
-                          <div>
-                            <p className="font-medium text-gray-900">{team.nextGame}</p>
-                            <p className="text-sm text-gray-600 flex items-center mt-1">
-                              <MapPin className="h-4 w-4 mr-1" />
-                              {team.arena}
-                            </p>
-                          </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{team.nextGame}</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {team.arena}
+                          </p>
                         </div>
                       </div>
                     </div>

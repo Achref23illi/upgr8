@@ -5,7 +5,7 @@ import { DynamicInput } from "@/components/ui/dynamic-input";
 import { DynamicButton } from "@/components/ui/dynamic-button";
 import { SimpleLoadingScreen } from "@/components/common/SimpleLoadingScreen";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import Image from "next/image";
 
 /**
  * Form values interface for login submission
@@ -85,20 +85,38 @@ export function LoginScreen({
     const newErrors: Partial<LoginFormValues> = {};
     
     if (!formData.email) {
-      newErrors.email = "Email is required";
+      newErrors.email = "Le courriel est requis";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = "Veuillez entrer une adresse courriel valide";
     }
     
     if (!formData.password) {
-      newErrors.password = "Password is required";
+      newErrors.password = "Le mot de passe est requis";
     } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+      newErrors.password = "Le mot de passe doit contenir au moins 6 caractères";
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  // Mock accounts
+  const mockAccounts = [
+    {
+      email: "coach@upgr8.com",
+      password: "coach123",
+      type: "coach",
+      name: "Coach Martin",
+      redirectPath: "/dashboard/coach"
+    },
+    {
+      email: "player@upgr8.com", 
+      password: "player123",
+      type: "player",
+      name: "Alexandre Dubois",
+      redirectPath: "/player"
+    }
+  ];
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,33 +128,63 @@ export function LoginScreen({
     
     // Simulate API call delay with longer loading time to show the 3D animation
     setTimeout(() => {
-      if (onLoginSubmit) {
-        onLoginSubmit(formData);
+      // Check mock accounts
+      const account = mockAccounts.find(
+        acc => acc.email === formData.email && acc.password === formData.password
+      );
+
+      if (account) {
+        // Store user data in localStorage
+        localStorage.setItem('userType', account.type);
+        localStorage.setItem('userData', JSON.stringify({
+          name: account.name,
+          email: account.email,
+          type: account.type
+        }));
+
+        if (onLoginSubmit) {
+          onLoginSubmit(formData);
+        } else {
+          // Redirect based on account type
+          console.log("Login successful:", account);
+          window.location.href = account.redirectPath;
+        }
       } else {
-        // Default behavior - redirect to dashboard
-        console.log("Login submitted:", formData);
-        window.location.href = "/dashboard";
+        // Invalid credentials
+        setErrors({
+          email: "Courriel ou mot de passe invalide",
+          password: "Courriel ou mot de passe invalide"
+        });
       }
+      
       setIsSubmitting(false);
     }, 3000); // Increased to 3 seconds to show the hockey stick animation
   };
 
   // Animation variants for the form container
   const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.5,
-        staggerChildren: 0.1
+        duration: 0.6,
+        ease: "easeOut",
+        staggerChildren: 0.15
       }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 }
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut"
+      }
+    }
   };
 
   return (
@@ -144,144 +192,170 @@ export function LoginScreen({
       {/* Simple Loading Screen */}
       <SimpleLoadingScreen isLoading={isSubmitting} />
       
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <motion.div
           className="w-full max-w-md"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
         >
-        {/* Card Container */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header Section with Logo */}
+          {/* Logo Section */}
           <motion.div 
-            className="bg-gradient-to-r from-red-500 to-red-600 p-8 text-center"
+            className="text-center"
             variants={itemVariants}
           >
-            {/* Logo Placeholder */}
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl mb-4 shadow-lg">
-              <Sparkles className="w-10 h-10 text-red-500" />
+            <div className="inline-flex items-center justify-center">
+              <Image 
+                src="/logo.png" 
+                alt="UpGr8 Logo" 
+                width={320} 
+                height={112}
+                priority
+                className="w-auto h-24"
+              />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-red-100">Enter your credentials to access your account</p>
           </motion.div>
 
-          {/* Form Section */}
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
-            <motion.div variants={itemVariants} className="space-y-4">
-              {/* Email Input */}
-              <DynamicInput
-                label="Email Address"
-                type="email"
-                name="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={handleInputChange}
-                error={errors.email}
-                containerClassName="space-y-2"
-              />
+          {/* Main Card Container */}
+          <motion.div 
+            className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mt-4"
+            variants={itemVariants}
+          >
+            {/* Header Text */}
+            <div className="text-center mb-6">
+              <h1 className="text-xl font-semibold text-gray-900 mb-1">Connectez-vous à votre compte</h1>
+              <p className="text-gray-600 text-sm">Bon retour ! Veuillez entrer vos informations.</p>
+              
+              {/* Demo Accounts */}
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg text-left">
+                <p className="text-xs font-medium text-blue-900 mb-2">Comptes de démonstration :</p>
+                <div className="text-xs text-blue-800 space-y-1">
+                  <div><strong>Entraîneur :</strong> coach@upgr8.com / coach123</div>
+                  <div><strong>Joueur :</strong> player@upgr8.com / player123</div>
+                </div>
+              </div>
+            </div>
 
-              {/* Password Input */}
-              <DynamicInput
-                label="Password"
-                type="password"
-                name="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleInputChange}
-                error={errors.password}
-                containerClassName="space-y-2"
-              />
-            </motion.div>
+            {/* Form Section */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-4">
+                {/* Email Input */}
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <DynamicInput
+                    type="email"
+                    name="email"
+                    id="email"
+                    placeholder="Entrez votre courriel"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    error={errors.email}
+                    className="h-10 text-sm"
+                  />
+                </div>
 
-            {/* Remember Me & Forgot Password Row */}
-            <motion.div 
-              variants={itemVariants}
-              className="flex items-center justify-between"
-            >
-              {/* Remember Me Checkbox */}
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="rememberMe"
-                  checked={formData.rememberMe}
-                  onChange={handleInputChange}
-                  className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                {/* Password Input */}
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    Mot de passe
+                  </label>
+                  <DynamicInput
+                    type="password"
+                    name="password"
+                    id="password"
+                    placeholder="Entrez votre mot de passe"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    error={errors.password}
+                    className="h-10 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Remember Me & Forgot Password Row */}
+              <div className="flex items-center justify-between">
+                {/* Remember Me Checkbox */}
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="rememberMe"
+                    checked={formData.rememberMe}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500 focus:ring-offset-2"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Se souvenir pendant 30 jours</span>
+                </label>
+
+                {/* Forgot Password Link */}
+                <a 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (onNavigateToForgotPassword) {
+                      onNavigateToForgotPassword();
+                    }
+                  }}
+                  className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
+                >
+                  Mot de passe oublié ?
+                </a>
+              </div>
+
+              {/* Sign In Button */}
+              <div className="pt-1">
+                <DynamicButton
+                  label={isSubmitting ? "Connexion..." : "Se connecter"}
+                  type="submit"
+                  variant="default"
+                  className="w-full h-10 text-sm font-medium bg-red-600 text-white border-0 hover:bg-red-700 focus:ring-red-500"
+                  disabled={isSubmitting}
                 />
-                <span className="text-sm text-gray-600">Remember me</span>
-              </label>
-
-              {/* Forgot Password Link */}
-              <DynamicButton
-                label="Forgot Password?"
-                variant="link"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (onNavigateToForgotPassword) {
-                    onNavigateToForgotPassword();
-                  } else {
-                    alert("Navigate to Forgot Password");
-                  }
-                }}
-                className="text-sm p-0 h-auto"
-              />
-            </motion.div>
-
-            {/* Sign In Button */}
-            <motion.div variants={itemVariants}>
-              <DynamicButton
-                label={isSubmitting ? "Signing in..." : "Sign In"}
-                type="submit"
-                variant="default"
-                className="w-full"
-                disabled={isSubmitting}
-              />
-            </motion.div>
-
-            {/* Divider */}
-            <motion.div 
-              variants={itemVariants}
-              className="relative my-6"
-            >
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">New to UpGr8?</span>
+
+              {/* Create Account Link */}
+              <div className="text-center">
+                <span className="text-sm text-gray-600">
+                  Vous n&apos;avez pas de compte ?{" "}
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (onNavigateToCreateAccount) {
+                        onNavigateToCreateAccount();
+                      } else {
+                        window.location.href = "/signup";
+                      }
+                    }}
+                    className="font-medium text-red-600 hover:text-red-700 transition-colors"
+                  >
+                    S&apos;inscrire
+                  </a>
+                </span>
               </div>
-            </motion.div>
+            </form>
+          </motion.div>
 
-            {/* Create Account Button */}
-            <motion.div variants={itemVariants}>
-              <DynamicButton
-                label="Create Account"
-                variant="outline"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (onNavigateToCreateAccount) {
-                    onNavigateToCreateAccount();
-                  } else {
-                    window.location.href = "/signup";
-                  }
-                }}
-                className="w-full"
-              />
-            </motion.div>
-          </form>
-        </div>
-
-        {/* Footer Text */}
-        <motion.p 
-          variants={itemVariants}
-          className="text-center text-sm text-gray-500 mt-6"
-        >
-          By signing in, you agree to our{" "}
-          <a href="#" className="text-red-600 hover:underline">Terms of Service</a>
-          {" "}and{" "}
-          <a href="#" className="text-red-600 hover:underline">Privacy Policy</a>
-        </motion.p>
-      </motion.div>
-    </div>
+          {/* Footer Links */}
+          <motion.div 
+            variants={itemVariants}
+            className="mt-4 flex items-center justify-center space-x-4 text-sm"
+          >
+            <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+              © 2025 UpGr8
+            </a>
+            <span className="text-gray-300">•</span>
+            <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+              Politique de confidentialité
+            </a>
+            <span className="text-gray-300">•</span>
+            <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+              Conditions d&apos;utilisation
+            </a>
+          </motion.div>
+        </motion.div>
+      </div>
     </>
   );
 }
